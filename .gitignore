@@ -1,12 +1,2 @@
-/node_modules
-/public/js/bundle.js
-/public/js/demo-bundle.js
-/public/js/idGraph-bundle.js
-/public/js/timeGraph-bundle.js
-/public/js/arraysGraph-bundle.js
-/public/js/bots-bundle.js
-/build
-debug.js
+/lib
 .DS_Store
-/performance/logs/*
-!/performance/logs/.gitkeep
