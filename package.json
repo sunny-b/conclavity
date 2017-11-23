@@ -1,12 +1,11 @@
 {
   "name": "conclavity",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "embeddable peer-to-peer collaborative text editor",
   "main": "conclave-transpiled.js",
   "scripts": {
     "test": "jasmine",
-    "build": "babel lib -d build && babel conclave.js -o conclave-transpiled.js",
-    "postinstall": "npm run build"
+    "build": "babel lib -d build && babel conclave.js -o conclave-transpiled.js"
   },
   "repository": {
     "type": "git",
