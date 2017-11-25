@@ -95,6 +95,8 @@ class Conclave {
       }),
       options
     );
+
+    this.controller.init();
   }
 }
 
