@@ -191,6 +191,47 @@ describe("CRDT", () => {
     })
   });
 
+  describe('retrieveStrategy', () => {
+    let base, boundary;
+
+    beforeEach(() => {
+      base = 16;
+      boundary = 5;
+    });
+
+    it('returns + if strategy is plus', () => {
+      const strategy = 'plus';
+      const crdt = new CRDT(siteId, vector, base, boundary, strategy);
+
+      expect(crdt.retrieveStrategy(0)).toEqual('+');
+      expect(crdt.retrieveStrategy(1)).toEqual('+');
+    });
+
+    it('returns - if strategy is minus', () => {
+      const strategy = 'minus';
+      const crdt = new CRDT(siteId, vector, base, boundary, strategy);
+
+      expect(crdt.retrieveStrategy(0)).toEqual('-');
+      expect(crdt.retrieveStrategy(1)).toEqual('-');
+    });
+
+    it('alternates between + and - if strategy is alternate', () => {
+      const strategy = 'alternate';
+      const crdt = new CRDT(siteId, vector, base, boundary, strategy);
+
+      expect(crdt.retrieveStrategy(0)).toEqual('+');
+      expect(crdt.retrieveStrategy(1)).toEqual('-');
+    });
+
+    it('returns random strategies if strategy is random', () => {
+      const strategy = 'random';
+      const crdt = new CRDT(siteId, vector, base, boundary, strategy);
+
+      expect(crdt.retrieveStrategy(0)).toMatch(/\+|\-/);
+      expect(crdt.retrieveStrategy(1)).toMatch(/\+|\-/);
+    });
+  });
+
   describe('generatePosBetween', () => {
     let crdt;
 
@@ -401,6 +442,182 @@ describe("CRDT", () => {
       crdt.remoteInsert(char3);
       const index = crdt.findIndexInLine(char2, line1);
       expect(index).toBe(1);
+    });
+  });
+
+  describe('retrieveStruct', () => {
+    const crdt = new CRDT(siteId, vector);
+    it('retrieves empty structure when crdt is empty', () => {
+      expect(crdt.retrieveStruct()).toEqual([[]]);
+    });
+
+    it('retrieves struct with elements if structure not empty', () => {
+      crdt.localInsert('a', {line: 0, ch: 0});
+      expect(crdt.retrieveStruct()).not.toEqual([[]]);
+    });
+  });
+
+  describe('removeEmptyLines', () => {
+    const crdt = new CRDT(siteId, vector);
+    crdt.struct = [[], []];
+
+    it('removes any empty arrays that are not the first line', () => {
+      expect(crdt.struct).toEqual([[], []]);
+      crdt.removeEmptyLines();
+      expect(crdt.struct).toEqual([[]]);
+    });
+  });
+
+  describe('mergeLines', () => {
+    it('merges to line arrays together', () => {
+      const crdt = new CRDT(siteId, vector);
+      crdt.struct = [['a'], ['b']];
+
+      crdt.mergeLines(0);
+      expect(crdt.struct).toEqual([['a', 'b']]);
+    });
+  });
+
+  describe('isEmpty', () => {
+    it('returns true if crdt is empty', () => {
+      const crdt = new CRDT(siteId, vector);
+      expect(crdt.isEmpty()).toBe(true);
+    });
+
+    it('returns false if crdt is not empty', () => {
+      const crdt = new CRDT(siteId, vector);
+      crdt.struct = [['a']];
+
+      expect(crdt.isEmpty()).toBe(false);
+    });
+  });
+
+  describe('findPosition', () => {
+    let crdt, char1, char2, char3, startPos, endPos;
+
+    beforeEach(() => {
+      crdt = new CRDT(siteId, vector);
+      char1 = new Char("a", 1, siteId, [new Identifier(1, 25)]);
+      char2 = new Char("b", 2, siteId, [new Identifier(2, 25)]);
+      char3 = new Char("c", 3, siteId, [new Identifier(3, 25)]);
+      startPos = { line: 0, ch: 0 };
+      endPos = { line: 0, ch: 1 };
+      crdt.remoteInsert(char1);
+      crdt.remoteInsert(char2);
+    })
+
+    it('returns a object with a line and key properties', () => {
+      const pos = crdt.findPosition(char1);
+      expect(Object.keys(pos)).toEqual(['line', 'ch']);
+    });
+
+    it('returns the correct position of the char if char already exists', () => {
+      const pos = crdt.findPosition(char1);
+      expect(pos).toEqual({line: 0, ch: 0});
+    });
+
+    it('returns where the char would be if char does not exist', () => {
+      const pos = crdt.findPosition(char3);
+      expect(pos).toEqual({line: 0, ch: 2});
+    });
+  });
+
+  describe('findEndPosition', () => {
+    let crdt, char1, char2, startPos, endPos;
+
+    beforeEach(() => {
+      crdt = new CRDT(siteId, vector);
+      char1 = new Char("a", 1, siteId, [new Identifier(1, 25)]);
+      char2 = new Char("b", 2, siteId, [new Identifier(2, 25)]);
+      startPos = { line: 0, ch: 0 };
+      endPos = { line: 0, ch: 1 };
+      crdt.remoteInsert(char1);
+      crdt.remoteInsert(char2);
+    })
+
+    it('finds the last position in the crdt structure', () => {
+      expect(crdt.findEndPosition(char2, crdt.struct[0], 1)).toEqual({line: 0, ch: 2});
+    });
+  });
+
+  describe('findPosAfter', () => {
+    let crdt, char1, char2, startPos, endPos;
+
+    beforeEach(() => {
+      crdt = new CRDT(siteId, vector);
+      char1 = new Char("a", 1, siteId, [new Identifier(1, 25)]);
+      char2 = new Char("b", 2, siteId, [new Identifier(2, 25)]);
+      startPos = { line: 0, ch: 0 };
+      endPos = { line: 0, ch: 1 };
+      crdt.remoteInsert(char1);
+      crdt.remoteInsert(char2);
+    })
+
+    it('returns empty array if no char after', () => {
+      const pos = crdt.findPosAfter({line: 0, ch:2 });
+      expect(pos).toEqual([]);
+    });
+
+    it('returns position of char located afterwards', () => {
+      const pos = crdt.findPosAfter({line: 0, ch: 1});
+      expect(pos).toEqual(char2.position);
+    });
+  });
+
+  describe('findPosBefore', () => {
+    let crdt, char1, char2, startPos, endPos;
+
+    beforeEach(() => {
+      crdt = new CRDT(siteId, vector);
+      char1 = new Char("a", 1, siteId, [new Identifier(1, 25)]);
+      char2 = new Char("b", 2, siteId, [new Identifier(2, 25)]);
+      startPos = { line: 0, ch: 0 };
+      endPos = { line: 0, ch: 1 };
+      crdt.remoteInsert(char1);
+      crdt.remoteInsert(char2);
+    })
+
+    it('returns empty array if no char before', () => {
+      const pos = crdt.findPosBefore({line: 0, ch:0 });
+      expect(pos).toEqual([]);
+    });
+
+    it('returns position of char located before', () => {
+      const pos = crdt.findPosBefore({line: 0, ch: 1});
+      expect(pos).toEqual(char1.position);
+    });
+  });
+
+  describe('totalChars', () => {
+    it('returns 0 if the crdt is empty', () => {
+      const crdt = new CRDT(siteId, vector);
+      expect(crdt.totalChars()).toEqual(0);
+    });
+
+    it('returns number of chars in the crdt', () => {
+      const crdt = new CRDT(siteId, vector);
+      crdt.localInsert('a', {line: 0, ch: 0});
+      expect(crdt.totalChars()).toEqual(1);
+    });
+  });
+
+  describe('toText', () => {
+    it('returns empty string if the crdt is empty', () => {
+      const crdt = new CRDT(siteId, vector);
+      expect(crdt.toText()).toEqual('');
+    });
+
+    it('returns string of chars in the crdt', () => {
+      const crdt = new CRDT(siteId, vector);
+      crdt.localInsert('a', {line: 0, ch: 0});
+      expect(crdt.toText()).toEqual('a');
+    });
+
+    it('returns string of chars in the crdt, including new line characters', () => {
+      const crdt = new CRDT(siteId, vector);
+      crdt.localInsert('a', {line: 0, ch: 0});
+      crdt.localInsert('\n', {line: 0, ch: 1});
+      expect(crdt.toText()).toEqual('a\n');
     });
   });
 });
