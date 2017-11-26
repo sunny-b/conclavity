@@ -3,26 +3,18 @@ import UUID from 'uuid/v1';
 import { JSDOM } from 'jsdom';
 
 describe('Broadcast', () => {
-  const mockController = {
-    siteId: UUID(),
-    peer: {
-      id: 55,
-      on: function() {},
-      connect: function(id) { return { open: false, id: id, on: function() {} } },
-      call: function() {}
-    },
-    addToNetwork: function() {},
-    removeFromNetwork: function() {}
+  const siteId = UUID();
+  const mockPeer = {
+    id: 55,
+    on: function() {},
+    connect: function(id) { return { open: false, id: id, on: function() {} } },
+    call: function() {}
   };
 
   const targetId = UUID();
 
   describe('constructor', () => {
-    const broadcast = new Broadcast(12345);
-
-    it('creates a peer placeholder', () => {
-      expect(broadcast.peer).toBeNull();
-    });
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it('creates an incoming connections array', () => {
       expect(broadcast.inConns).toBeTruthy();
@@ -38,7 +30,7 @@ describe('Broadcast', () => {
   });
 
   describe('send', () => {
-    const broadcast = new Broadcast(12345);
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it('calls forEach on the outgoing connections array', () => {
       spyOn(broadcast.outConns, 'forEach');
@@ -66,10 +58,11 @@ describe('Broadcast', () => {
   });
 
   describe('addToOutgoingBuffer', () => {
-    const bc = new Broadcast(12345);
+    const bc = new Broadcast(12345, mockPeer, siteId);
     bc.outgoingBuffer = [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4,
-      5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+      5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+      5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5
     ];
     bc.addToOutgoingBuffer(5);
 
@@ -83,7 +76,7 @@ describe('Broadcast', () => {
   });
 
   describe('processOutgoingBuffer', () => {
-    const bc = new Broadcast(12345);
+    const bc = new Broadcast(12345, mockPeer, siteId);
     bc.outConns = [{peer: 6, send: function() {}}]
     bc.outgoingBuffer = [1, 2, 3, 4, 5];
 
@@ -94,27 +87,8 @@ describe('Broadcast', () => {
     });
   });
 
-  describe('bindServerEvents', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-
-    it("set this.peer to the peer passed in from the controller", () => {
-      expect(broadcast.peer).toBeNull();
-      broadcast.bindServerEvents(targetId, mockController.peer);
-      expect(broadcast.peer).toEqual(mockController.peer);
-    });
-
-    it("calls onOpen with the targetId passed in", () => {
-      spyOn(broadcast, "onOpen");
-      broadcast.bindServerEvents(targetId, mockController.peer);
-      expect(broadcast.onOpen).toHaveBeenCalledWith(targetId);
-    });
-  });
-
   describe('onOpen', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it('calls "on" on the peer property', () => {
       spyOn(broadcast.peer, 'on');
@@ -124,9 +98,7 @@ describe('Broadcast', () => {
   });
 
   describe('onError', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it('calls "on" on the peer property', () => {
       spyOn(broadcast.peer, 'on');
@@ -136,16 +108,8 @@ describe('Broadcast', () => {
   });
 
   describe('requestConnection', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     broadcast.isAlreadyConnectedOut = function() {};
-
-    // it('connects the peer to the target', () => {
-    //   spyOn(broadcast.peer, 'connect');
-    //   broadcast.requestConnection(12);
-    //   expect(broadcast.peer.connect).toHaveBeenCalled();
-    // });
 
     it('calls add the connection to the outgoing connections', () => {
       spyOn(broadcast, 'addToOutConns');
@@ -156,52 +120,49 @@ describe('Broadcast', () => {
 
   describe('redistribute', () => {
     it('calls syncTo with the peerId and siteId if less than 5 connections', () => {
-      const bc = new Broadcast(12345);
-      bc.controller = mockController;
-      bc.controller.network = [1, 2, 3, 4, 5];
+      const bc = new Broadcast(12345, mockPeer, siteId);
+
+      const network = [1, 2, 3, 4, 5];
       bc.inConns = [1, 2, 3, 4];
       bc.outConns = [1, 2, 3, 4];
-      spyOn(bc, 'syncTo');
-      bc.redistribute(1, 2);
-      expect(bc.syncTo).toHaveBeenCalledWith(1, 2);
+      spyOn(bc, 'emit');
+      bc.redistribute(1, 2, network);
+      expect(bc.emit).toHaveBeenCalledWith('sendSync', 1, 2);
     });
 
     it('calls forward message with the peerId and siteId if too many incoming connections', () => {
-      const bc = new Broadcast(12345);
-      bc.controller = mockController;
-      bc.controller.network = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      const bc = new Broadcast(12345, mockPeer, siteId);
+      const network = [1, 2, 3, 4];
       bc.inConns = [1, 2, 3, 4, 5, 6];
       bc.outConns = [1, 2, 3, 4];
       spyOn(bc, 'forwardMessage');
-      bc.redistribute(1, 2);
+      bc.redistribute(1, 2, network.length);
       expect(bc.forwardMessage).toHaveBeenCalledWith(1, 2);
     });
 
     it('calls forward message with the peerId and siteId if too many outgoing connections', () => {
-      const bc = new Broadcast(12345);
-      bc.controller = mockController;
-      bc.controller.network = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      const bc = new Broadcast(12345, mockPeer, siteId);
+      const network = [1, 2, 3, 4];
       bc.inConns = [1, 2, 3, 4];
       bc.outConns = [1, 2, 3, 4, 5, 6];
       spyOn(bc, 'forwardMessage');
-      bc.redistribute(1, 2);
+      bc.redistribute(1, 2, network.length);
       expect(bc.forwardMessage).toHaveBeenCalledWith(1, 2);
     });
 
-    it('calls syncTo with the peerId and siteId otherwise', () => {
-      const bc = new Broadcast(12345);
-      bc.controller = mockController;
-      bc.controller.network = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-      bc.inConns = [1, 2, 3, 4, 5];
-      bc.outConns = [1, 2, 3, 4, 5];
-      spyOn(bc, 'syncTo');
-      bc.redistribute(1, 2);
-      expect(bc.syncTo).toHaveBeenCalledWith(1, 2);
+    it('calls emit with the peerId and siteId otherwise', () => {
+      const bc = new Broadcast(12345, mockPeer, siteId);
+      const network = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+      bc.inConns = [1, 2, 3, 4];
+      bc.outConns = [1, 2, 3, 4];
+      spyOn(bc, 'emit');
+      bc.redistribute(1, 2, Math.floor(network.length / 2));
+      expect(bc.emit).toHaveBeenCalledWith('sendSync', 1, 2);
     });
   });
 
   describe('forwardMessage', () => {
-    const bc = new Broadcast(123);
+    const bc = new Broadcast(123, mockPeer, siteId);
     bc.outConns = [{peer: 6, send: function() {}}];
 
     it('calls send on one of its outgoing connections', () => {
@@ -212,7 +173,7 @@ describe('Broadcast', () => {
   });
 
   describe('addToOutConns', () => {
-    const bc = new Broadcast(123);
+    const bc = new Broadcast(123, mockPeer, siteId);
 
     it('pushes the connection into the outgoing connections if not already there', () => {
       bc.isAlreadyConnectedOut = function(conn) {return false}
@@ -228,7 +189,7 @@ describe('Broadcast', () => {
   });
 
   describe('addToInConns', () => {
-    const bc = new Broadcast(123);
+    const bc = new Broadcast(123, mockPeer, siteId);
 
     it('pushes the connection into the incoming connections if not already there', () => {
       bc.isAlreadyConnectedIn = function(conn) {return false}
@@ -244,8 +205,7 @@ describe('Broadcast', () => {
   });
 
   describe("addToNetwork", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it("calls send with type 'add to network' and newPeer and siteId passed in", () => {
       spyOn(broadcast, "send");
@@ -255,8 +215,7 @@ describe('Broadcast', () => {
   });
 
   describe("removeFromNetwork", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it("calls send with type 'remove to network' and oldPeer of id passed in", () => {
       spyOn(broadcast, "send");
@@ -266,9 +225,7 @@ describe('Broadcast', () => {
   });
 
   describe("removeFromConnections", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     const conn = {
       peer: "somebody"
     };
@@ -296,9 +253,7 @@ describe('Broadcast', () => {
   });
 
   describe("isAlreadyConnectedOut", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     const conn = {
       peer: "somebody"
     };
@@ -319,9 +274,7 @@ describe('Broadcast', () => {
   });
 
   describe("isAlreadyConnectedIn", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     const conn = {
       peer: "somebody"
     };
@@ -342,9 +295,7 @@ describe('Broadcast', () => {
   });
 
   describe("onPeerConnection", () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     it("calls 'on' on this.peer", () => {
       spyOn(broadcast.peer, "on");
@@ -354,42 +305,18 @@ describe('Broadcast', () => {
   });
 
   describe('syncTo', () => {
-    const bc = new Broadcast(123);
-    bc.controller = mockController;
-    bc.peer = mockController.peer;
-    bc.controller.crdt = { struct: [] };
-    bc.controller.vector = { versions: []};
+    const bc = new Broadcast(123, mockPeer, siteId);
     bc.isAlreadyConnectedOut = function() {};
-
-    // it('calls connect with the peerId passed in on this.peer', () => {
-    //   spyOn(bc.peer, 'connect');
-    //   bc.syncTo(1, 2);
-    //   expect(bc.peer.connect).toHaveBeenCalledWith(1);
-    // });
 
     it('calls addToOutConns', () => {
       spyOn(bc, 'addToOutConns');
       bc.syncTo(1, 2);
       expect(bc.addToOutConns).toHaveBeenCalled();
     });
-
-    it('calls controller addToNetwork with the peerId and siteId passed in', () => {
-      spyOn(bc.controller, 'addToNetwork');
-      bc.syncTo(1, 2);
-      expect(bc.controller.addToNetwork).toHaveBeenCalledWith(1, 2);
-    });
   });
 
   describe('videoCall', () => {
-    const bc = new Broadcast(123);
-    bc.controller = mockController;
-    bc.peer = mockController.peer;
-
-    // it('calls the call method on this.peer with the id and ms passed in', () => {
-    //   spyOn(bc.peer, 'call');
-    //   bc.videoCall('id', 'ms', 'color');
-    //   expect(bc.peer.call).toHaveBeenCalledWith('id', 'ms');
-    // });
+    const bc = new Broadcast(123, mockPeer, siteId);
 
     it('calls onStream', () => {
       spyOn(bc, 'onStream');
@@ -399,7 +326,7 @@ describe('Broadcast', () => {
   });
 
   describe('onConnection', () => {
-    const broadcast = new Broadcast(12345);
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
 
     const conn = {
       peer: "somebody",
@@ -414,9 +341,7 @@ describe('Broadcast', () => {
   });
 
   describe('onVideoCall', () => {
-    const bc = new Broadcast(123);
-    bc.controller = mockController;
-    bc.peer = mockController.peer;
+    const bc = new Broadcast(12345, mockPeer, siteId);
 
     it('calls the on method on this.peer', () => {
       spyOn(bc.peer, 'on');
@@ -426,7 +351,7 @@ describe('Broadcast', () => {
   });
 
   describe('onStream', () => {
-    const bc = new Broadcast(123);
+    const bc = new Broadcast(12345, mockPeer, siteId);
     const obj = { on: function() {} };
 
     it('calls the on method on the object passed in', () => {
@@ -437,7 +362,7 @@ describe('Broadcast', () => {
   });
 
   describe('onStreamClose', () => {
-    const bc = new Broadcast(123);
+    const bc = new Broadcast(12345, mockPeer, siteId);
     const vid = {style: { visibility: 'visible' } };
     const dom = new JSDOM(`<!DOCTYPE html><li id="7"><span id="test"></a>`);
     const mockDoc = dom.window.document;
@@ -450,26 +375,14 @@ describe('Broadcast', () => {
       }
     });
 
-    it('sets the visibility property on the vid element passed in to hidden', () => {
-      bc.onStreamClose(vid, 7, mockDoc);
-      expect(vid.style.visibility).toEqual('hidden');
-    });
-
     it('sets the current stream to null', () => {
       bc.onStreamClose(vid, 7, mockDoc);
       expect(bc.currentStream).toBeNull();
     })
-
-    it('sets the onclick property on the correct peer span', () => {
-      bc.onStreamClose(vid, 7, mockDoc);
-      expect(mockDoc.getElementById('test').onclick).toBeTruthy();
-    });
   });
 
   describe('onData', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     const conn = {
       peer: "somebody",
       on: function() {}
@@ -483,9 +396,7 @@ describe('Broadcast', () => {
   });
 
   describe('randomId', () => {
-    const bc = new Broadcast(123);
-    bc.controller = mockController;
-    bc.peer = mockController.peer;
+    const bc = new Broadcast(12345, mockPeer, siteId);
 
     it('returns a random peer id from incoming connections list', () => {
       bc.inConns = [{peer: 1}, {peer: 2}];
@@ -500,9 +411,7 @@ describe('Broadcast', () => {
   });
 
   describe('onConnClose', () => {
-    const broadcast = new Broadcast(12345);
-    broadcast.controller = mockController;
-    broadcast.peer = mockController.peer;
+    const broadcast = new Broadcast(12345, mockPeer, siteId);
     const conn = {
       peer: "somebody",
       on: function() {}

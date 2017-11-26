@@ -78,7 +78,6 @@ describe("CRDT", () => {
       char = new Char('A', siteCounter, siteId, [new Identifier(2, siteId)]);
       newlineChar = new Char('\n', siteCounter + 1, siteId, [new Identifier(1, siteId)]);
       pos = { line: 1, ch: 0 };
-      spyOn(crdt, 'emit');
     });
 
     it("adds a new line to struct if non-newline char is inserted on a new line", () => {

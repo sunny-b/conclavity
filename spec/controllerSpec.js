@@ -3,12 +3,22 @@ import UUID from 'uuid/v1';
 import Controller from '../lib/controller';
 import Char from '../lib/char';
 import Identifier from '../lib/identifier';
+import { generateItemFromHash } from '../lib/hashAlgo';
+import CSS_COLORS from '../lib/cssColors';
+import { ANIMALS, BOTS } from '../lib/cursorNames';
 
 describe("Controller", () => {
   const mockPeer = {
     id: 8,
     on: function() {},
-    connect: function() {},
+    connect: () => {
+      return {
+        on: () => {},
+        peer: {
+          id: 'a'
+        }
+      }
+    },
   };
 
   const mockMDE = {
@@ -17,27 +27,35 @@ describe("Controller", () => {
       on: function() {}
     }
   };
-  const mockOptions = {};
-  //
-  // const mockBroadcast = {
-  //   bindServerEvents: function() {},
-  //   connectToTarget: function() {},
-  //   connectToNewTarget: function() {},
-  //   send: function() {},
-  //   addToNetwork: function() {},
-  //   removeFromNetwork: function() {},
-  //   connections: []
-  // };
 
-  // const mockEditor = {
-  //   bindChangeEvent: function() {},
-  //   updateView: function(text) {},
-  //   onDownload: function() {},
-  //   replaceText: function() {},
-  //   insertText: function() {},
-  //   deleteText: function() {},
-  //   removeCursor: function() {}
-  // };
+  const mockOptions = {};
+
+  const mockBroadcast = {
+    bindServerEvents: function() {},
+    connectToTarget: function() {},
+    connectToNewTarget: function() {},
+    send: function() {},
+    addToNetwork: function() {},
+    removeFromNetwork: function() {},
+    connections: []
+  };
+
+  const mockEditor = {
+    mde: mockMDE,
+    bindChangeEvent: function() {},
+    updateView: function(text) {},
+    onDownload: function() {},
+    replaceText: function() {},
+    insertText: function() {},
+    deleteText: function() {},
+    removeCursor: function() {}
+  };
+
+  const mockView = {
+    enableEditor: () => {},
+    addToListOfPeers: () => {},
+    removeFromListOfPeers: () => {}
+  }
 
   const host = "https://localhost:3000";
   const siteId = UUID();
@@ -48,6 +66,7 @@ describe("Controller", () => {
 
     beforeEach(() => {
       controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view =
       initialStruct = [
         [
           {
@@ -105,109 +124,103 @@ describe("Controller", () => {
     });
   });
 
-  // describe("addToNetwork", () => {
-  //   const controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
-  //   controller.network.push({ peerId: "b", siteId: '10' });
-  //   const newDOM = new JSDOM(`<!DOCTYPE html><p id="peerId"></p>`);
-  //   const newWin = newDOM.window;
-  //   const mockDoc = newWin.document;
-  //   const window = newWin;
-  //   const document = mockDoc;
-  //   const connList = mockDoc.querySelector("#peerId").textContent;
-  //
-  //   it("doesn't do anything if the id is already in the network list", () => {
-  //     spyOn(controller.broadcast, "addToNetwork");
-  //     controller.addToNetwork("b", '10');
-  //     expect(controller.broadcast.addToNetwork).not.toHaveBeenCalled();
-  //   });
-  //
-  //   it("pushes the id into the network list", () => {
-  //     controller.addToNetwork("a", '11');
-  //     expect(controller.network).toContain({peerId: "a", siteId: '11'});
-  //   });
-  //
-  //   it("calls addToListOfPeers with the id passed in if it is not its own id", () => {
-  //     spyOn(controller, "addToListOfPeers");
-  //     controller.addToNetwork('10', "c");
-  //     expect(controller.addToListOfPeers).toHaveBeenCalledWith("c", '10', mockDoc);
-  //   });
-  //
-  //   it("doesn't call addToListOfPeers if its own id is passed in", () => {
-  //     spyOn(controller, "addToListOfPeers");
-  //     controller.addToNetwork('b', '10');
-  //     expect(controller.addToListOfPeers).not.toHaveBeenCalled();
-  //   });
-  // });
+  describe("addToNetwork", () => {
+    const controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+    controller.network.push({ peerId: "b", siteId: '10' });
+    controller.view = mockView;
 
-  // describe("removeFromNetwork", () => {
-  //   let controller;
-  //
-  //   beforeEach(() => {
-  //     controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
-  //     controller.network.push({peerId: 'b', siteId: '10'});
-  //     controller.addToListOfPeers('10', "b", mockDoc);
-  //   });
-  //
-  //   it("doesn't do anything if the id isn't in the network list", () => {
-  //     spyOn(controller.broadcast, "removeFromNetwork");
-  //     spyOn(controller, "removeFromListOfPeers");
-  //     controller.removeFromNetwork("a");
-  //     expect(controller.broadcast.removeFromNetwork).not.toHaveBeenCalled();
-  //     expect(controller.removeFromListOfPeers).not.toHaveBeenCalled();
-  //   });
-  //
-  //   it("removes the id from the network list", () => {
-  //     controller.removeFromNetwork("b");
-  //     expect(controller.network.length).toEqual(0);
-  //   });
-  //
-  //   it("calls removeFromListOfPeers with the id passed in", () => {
-  //     spyOn(controller, "removeFromNetwork");
-  //     controller.removeFromNetwork("b");
-  //     expect(controller.removeFromNetwork).toHaveBeenCalledWith("b", mockDoc);
-  //   });
-  //
-  //   it("calls broadcast.removeFromNetwork with the id passed in", () => {
-  //     spyOn(controller.broadcast, "removeFromNetwork");
-  //     controller.removeFromNetwork("b");
-  //     expect(controller.broadcast.removeFromNetwork).toHaveBeenCalledWith("b", '10');
-  //   });
-  // });
+    it("doesn't do anything if the id is already in the network list", () => {
+      spyOn(controller.broadcast, "addToNetwork");
+      controller.addToNetwork("b", '10');
+      expect(controller.broadcast.addToNetwork).not.toHaveBeenCalled();
+    });
 
-  describe("addToListOfPeers", () => {
-    let controller, mockDoc, connList;
+    it("pushes the id into the network list", () => {
+      controller.addToNetwork("a", '11');
+      expect(controller.network).toContain({peerId: "a", siteId: '11'});
+    });
+
+    it("calls addToListOfPeers with the id passed in if it is not its own id", () => {
+      spyOn(controller, "addToListOfPeers");
+      controller.addToNetwork('10', "c");
+      expect(controller.addToListOfPeers).toHaveBeenCalledWith("10", "c");
+    });
+
+    it("doesn't call addToListOfPeers if its own id is passed in", () => {
+      spyOn(controller, "addToListOfPeers");
+      controller.addToNetwork('b', '10');
+      expect(controller.addToListOfPeers).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("removeFromNetwork", () => {
+    let controller;
 
     beforeEach(() => {
       controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
-      connList = mockDoc.querySelector("#peerId").textContent;
+      controller.view = mockView;
+      controller.network.push({peerId: 'b', siteId: '10'});
+      controller.addToListOfPeers('10', "b");
+    });
+
+    it("doesn't do anything if the id isn't in the network list", () => {
+      spyOn(controller.broadcast, "removeFromNetwork");
+      spyOn(controller.view, "removeFromListOfPeers");
+      controller.removeFromNetwork("a");
+      expect(controller.broadcast.removeFromNetwork).not.toHaveBeenCalled();
+      expect(controller.view.removeFromListOfPeers).not.toHaveBeenCalled();
+    });
+
+    it("removes the id from the network list", () => {
+      controller.removeFromNetwork("b");
+      expect(controller.network.length).toEqual(0);
+    });
+
+    it("calls removeFromListOfPeers with the id passed in", () => {
+      spyOn(controller, "removeFromNetwork");
+      controller.removeFromNetwork("b");
+      expect(controller.removeFromNetwork).toHaveBeenCalledWith("b");
+    });
+
+    it("calls broadcast.removeFromNetwork with the id passed in", () => {
+      spyOn(controller.broadcast, "removeFromNetwork");
+      controller.removeFromNetwork("b");
+      expect(controller.broadcast.removeFromNetwork).toHaveBeenCalledWith("b");
+    });
+  });
+
+  describe("addToListOfPeers", () => {
+    let controller, connList;
+
+    beforeEach(() => {
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
     })
 
-    it("updates the connection list on the page", () => {
-      controller.addToListOfPeers(siteId, targetPeerId, mockDoc);
-      const updatedConnList = mockDoc.querySelector("#peerId").textContent;
-      expect(connList).not.toEqual(updatedConnList);
+    it('calls addToListOfPeers on the view', () => {
+      spyOn(controller.view, 'addToListOfPeers');
+      const color = generateItemFromHash('10', CSS_COLORS);
+      const name = generateItemFromHash('10', ANIMALS);
+      controller.addToNetwork('b', '10');
+      expect(controller.view.addToListOfPeers).toHaveBeenCalledWith('b', color, name);
     });
   });
 
   describe("removeFromListOfPeers", () => {
-    let controller, mockDoc;
+    let controller;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-      mockDoc = new JSDOM(`<!DOCTYPE html><p id="peerId"><li id="abcde"></li></p>`).window.document;
-      controller.addToListOfPeers(siteId, targetPeerId, mockDoc);
-    })
-
-    it("removes the connection list element from the list", () => {
-      const numElements = mockDoc.getElementsByTagName("LI").length;
-      controller.removeFromListOfPeers('abcde', mockDoc);
-      const updatedNumElements = mockDoc.getElementsByTagName("LI").length;
-      expect(updatedNumElements).toEqual(numElements - 1);
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.addToListOfPeers(siteId, targetPeerId);
     });
+
   });
 
   describe("findNewTarget", () => {
-    const controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+    const controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+    controller.view = mockView;
+    controller.editor = mockEditor;
 
     it("filters its own id out and throws an error if possible network list is empty", () => {
       controller.network.push(8);
@@ -218,19 +231,19 @@ describe("Controller", () => {
       controller.network.push({peerId: 'a', siteId: '10'});
       controller.network.push({peerId: 'b', siteId: '11'});
       controller.broadcast.connections = ['a', 'b'];
-      spyOn(controller.broadcast, "connectToNewTarget");
-      controller.findNewTarget('c');
-      const args = controller.broadcast.connectToNewTarget.calls.allArgs();
+      spyOn(controller.broadcast, "requestConnection");
+      controller.findNewTarget();
 
-      expect(['a', 'b'].indexOf(args[0][0])).toBeGreaterThan(-1);
+      expect(controller.broadcast.requestConnection).toHaveBeenCalled();
     });
   });
 
   describe("handleSync", () => {
-    const controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-    const mockDoc = new JSDOM(`<!DOCTYPE html><p id="peerId"></p>`).window.document;
+    const controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+    controller.view = mockView;
+    controller.editor = mockEditor;
     const syncObj = {
-      initialStruct: [{
+      initialStruct: [[{
         position: [ {digit: 3, siteId: 4} ],
         counter: 1,
         siteId: 5,
@@ -240,7 +253,7 @@ describe("Controller", () => {
         counter: 1,
         siteId: 6,
         value: "b"
-      }],
+      }]],
       initialVersions: [{
         siteId: 2,
         counter: 1,
@@ -257,8 +270,8 @@ describe("Controller", () => {
 
     it("calls populateCRDT with the initial struct property", () => {
       spyOn(controller, "populateCRDT");
-      controller.handleSync(syncObj, mockDoc);
-      expect(controller.populateCRDT).toHaveBeenCalledWith([{
+      controller.handleSync(syncObj);
+      expect(controller.populateCRDT).toHaveBeenCalledWith([[{
             position: [ {digit: 3, siteId: 4} ],
             counter: 1,
             siteId: 5,
@@ -269,12 +282,12 @@ describe("Controller", () => {
             siteId: 6,
             value: "b"
           }
-      ]);
+      ]]);
     });
 
     it("calls populateVersionVector with the initial versions property", () => {
       spyOn(controller, "populateVersionVector");
-      controller.handleSync(syncObj, mockDoc);
+      controller.handleSync(syncObj);
       expect(controller.populateVersionVector).toHaveBeenCalledWith([{
         siteId: 2,
         counter: 1,
@@ -284,10 +297,10 @@ describe("Controller", () => {
 
     it("calls addToNetwork for each id in the network property", () => {
       spyOn(controller, "addToNetwork");
-      controller.handleSync(syncObj, mockDoc);
-      expect(controller.addToNetwork).toHaveBeenCalledWith('1', '3', mockDoc);
-      expect(controller.addToNetwork).toHaveBeenCalledWith('2', '4', mockDoc);
-      expect(controller.addToNetwork).toHaveBeenCalledWith('3', '5', mockDoc);
+      controller.handleSync(syncObj);
+      expect(controller.addToNetwork).toHaveBeenCalledWith('1', '3');
+      expect(controller.addToNetwork).toHaveBeenCalledWith('2', '4');
+      expect(controller.addToNetwork).toHaveBeenCalledWith('3', '5');
     });
   });
 
@@ -295,7 +308,9 @@ describe("Controller", () => {
     let controller, mockOperation;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       mockOperation = {};
 
       spyOn(controller.vector, "hasBeenApplied");
@@ -347,8 +362,9 @@ describe("Controller", () => {
     let controller, op1, op2, version1, version2;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       op1 = {type: 'delete', char: { siteId: 1, counter: 1 }};
       op2 = {type: 'delete', char: { siteId: 3, counter: 5 }};
       controller.buffer = [op1, op2];
@@ -399,7 +415,9 @@ describe("Controller", () => {
     let controller, operation;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       operation = {type: "delete", char: {siteId: 1, counter: 1}};
 
       spyOn(controller.vector, "hasBeenApplied");
@@ -420,10 +438,11 @@ describe("Controller", () => {
     let controller, operation;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-
-      spyOn(controller.crdt, "handleRemoteInsert");
-      spyOn(controller.crdt, "handleRemoteDelete");
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
+      spyOn(controller.crdt, "remoteInsert");
+      spyOn(controller.crdt, "remoteDelete");
       spyOn(controller.vector, "update");
     })
 
@@ -434,7 +453,7 @@ describe("Controller", () => {
         version: {siteId: 8, counter: 9}
       };
       controller.applyOperation(operation);
-      expect(controller.crdt.handleRemoteInsert).toHaveBeenCalled();
+      expect(controller.crdt.remoteInsert).toHaveBeenCalled();
     });
 
     it("calls crdt.handleRemoteDelete if it's a delete", () => {
@@ -444,7 +463,7 @@ describe("Controller", () => {
         version: {siteId: 8, counter: 9}
       };
       controller.applyOperation(operation);
-      expect(controller.crdt.handleRemoteDelete).toHaveBeenCalled();
+      expect(controller.crdt.remoteDelete).toHaveBeenCalled();
     });
 
     it("calls creates the proper char and identifier objects to pass to handleRemoteInsert/handleRemoteDelete", () => {
@@ -456,7 +475,7 @@ describe("Controller", () => {
       const newChar = new Char("a", 5, 4, [new Identifier(6, 7)]);
 
       controller.applyOperation(operation);
-      expect(controller.crdt.handleRemoteInsert).toHaveBeenCalledWith(newChar);
+      expect(controller.crdt.remoteInsert).toHaveBeenCalledWith(newChar);
     });
 
     it("calls vector.update with the operation's version", () => {
@@ -475,30 +494,34 @@ describe("Controller", () => {
     let controller;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-      spyOn(controller.crdt, "handleLocalDelete");
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
+      spyOn(controller.crdt, "localDelete");
     })
 
     it("calls crdt.handleLocalDelete as many times as the difference between startIdx and endIdx", () => {
       const startIdx = 3;
       const endIdx = 5;
-      controller.localDelete(startIdx, endIdx);
-      expect(controller.crdt.handleLocalDelete).toHaveBeenCalledWith(startIdx);
-      expect(controller.crdt.handleLocalDelete).toHaveBeenCalledWith(startIdx);
+      controller.handleLocalDelete(startIdx, endIdx);
+      expect(controller.crdt.localDelete).toHaveBeenCalledWith(startIdx, endIdx);
+      expect(controller.crdt.localDelete).toHaveBeenCalledWith(startIdx, endIdx);
     });
   });
 
   describe("localInsert", () => {
-    const controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+    const controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+    controller.view = mockView;
+    controller.editor = mockEditor;
 
     it("calls crdt.handleLocalInsert with the character object and index passed in", () => {
       const identifier1 = new Identifier(4, 5);
       const identifier2 = new Identifier(6, 7);
       const chars = [new Char("a", 1, 0, [identifier1, identifier2])];
 
-      spyOn(controller.crdt, "handleLocalInsert");
-      controller.localInsert(chars, 5);
-      expect(controller.crdt.handleLocalInsert).toHaveBeenCalledWith(chars[0], 5);
+      spyOn(controller.crdt, "localInsert");
+      controller.handleLocalInsert(chars, 5);
+      expect(controller.crdt.localInsert).toHaveBeenCalledWith(chars, 5);
     });
   });
 
@@ -506,8 +529,9 @@ describe("Controller", () => {
     let controller, newChar;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       const identifier1 = new Identifier(4, 5);
       const identifier2 = new Identifier(6, 7);
       newChar = new Char("a", 1, 0, [identifier1, identifier2]);
@@ -517,18 +541,9 @@ describe("Controller", () => {
     })
 
     it("calls vector.getLocalVersion", () => {
-      controller.broadcastInsertion(newChar);
-      expect(controller.vector.getLocalVersion).toHaveBeenCalled();
-    });
-
-    it("calls broadcast.send with the correct operation", () => {
-      controller.broadcastInsertion(newChar);
-      const operation = {
-        type: 'insert',
-        char: newChar,
-        version: undefined,
-      }
-      expect(controller.broadcast.send).toHaveBeenCalledWith(operation);
+      const version = controller.vector.getLocalVersion();
+      controller.broadcastInsertion(newChar, version);
+      expect(controller.broadcast.send).toHaveBeenCalledWith({type: 'insert',char: newChar,version: version});
     });
   });
 
@@ -536,8 +551,9 @@ describe("Controller", () => {
     let controller, newChar;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
-
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       const identifier1 = new Identifier(4, 5);
       const identifier2 = new Identifier(6, 7);
       newChar = new Char("a", 1, 0, [identifier1, identifier2]);
@@ -546,17 +562,13 @@ describe("Controller", () => {
       spyOn(controller.broadcast, "send");
     })
 
-    it("calls vector.getLocalVersion", () => {
-      controller.broadcastDeletion(newChar);
-      expect(controller.vector.getLocalVersion).toHaveBeenCalled();
-    });
-
     it("calls broadcast.send with the correct operation", () => {
-      controller.broadcastDeletion(newChar);
+      const version = controller.vector.getLocalVersion();
+      controller.broadcastDeletion(newChar, version);
       const operation = {
         type: 'delete',
         char: newChar,
-        version: undefined,
+        version: version
       }
       expect(controller.broadcast.send).toHaveBeenCalledWith(operation);
     });
@@ -568,7 +580,9 @@ describe("Controller", () => {
     let controller;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       spyOn(controller.editor, "insertText");
     })
 
@@ -582,7 +596,9 @@ describe("Controller", () => {
     let controller;
 
     beforeEach(() => {
-      controller = new Controller(targetPeerId, host, mockPeer, mockBroadcast, mockEditor);
+      controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
+      controller.view = mockView;
+      controller.editor = mockEditor;
       spyOn(controller.editor, "deleteText");
     })
 
