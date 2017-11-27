@@ -393,6 +393,7 @@ var Controller = function () {
       }
 
       this.processDeletionBuffer();
+      this.addToNetwork(operation.peerId, operation.version.siteId);
       this.broadcast.send(operation);
     }
   }, {
@@ -450,6 +451,7 @@ var Controller = function () {
     value: function broadcastInsertion(char, version) {
       var operation = {
         type: 'insert',
+        peerId: this.broadcast.peer.id,
         char: char,
         version: version
       };
@@ -461,6 +463,7 @@ var Controller = function () {
     value: function broadcastDeletion(char, version) {
       var operation = {
         type: 'delete',
+        peerId: this.broadcast.peer.id,
         char: char,
         version: version
       };
