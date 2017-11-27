@@ -55,7 +55,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Controller = function () {
-  function Controller(targetPeerId, host, peer, mde, options) {
+  function Controller(targetPeerId, host, peer, mde) {
+    var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+
     _classCallCheck(this, Controller);
 
     this.siteId = (0, _v2.default)();
@@ -71,13 +73,12 @@ var Controller = function () {
     this.broadcast = new _broadcast2.default(targetPeerId, peer, this.siteId);
     this.vector = new _versionVector2.default(this.siteId);
     this.crdt = new _crdt2.default(this.siteId, this.vector);
-
-    this.init();
   }
 
   _createClass(Controller, [{
     key: 'init',
     value: function init() {
+      this.view.bindViewEvents();
       this.editor.bindButtons(this.urlId);
       this.generateOwnName();
       if (this.urlId == 0) this.view.enableEditor();
@@ -135,6 +136,9 @@ var Controller = function () {
       });
       this.broadcast.on('serverError', function () {
         return _this.view.displayServerError();
+      });
+      this.broadcast.on('peerError', function () {
+        return _this.handleError();
       });
       this.broadcast.on('wrongBrowser', function () {
         return _this.view.displayWrongBrowser();
@@ -277,7 +281,7 @@ var Controller = function () {
       })) {
         this.network.push({ peerId: peerId, siteId: siteId });
         if (siteId !== this.siteId) {
-          this.addToListOfPeers(siteId, peerId);
+          this.addToListOfPeers(peerId, siteId);
         }
 
         this.broadcast.addToNetwork(peerId, siteId);
@@ -310,7 +314,7 @@ var Controller = function () {
     }
   }, {
     key: 'addToListOfPeers',
-    value: function addToListOfPeers(siteId, peerId) {
+    value: function addToListOfPeers(peerId, siteId) {
       var color = (0, _hashAlgo.generateItemFromHash)(siteId, _cssColors2.default);
       var name = void 0;
 
@@ -375,19 +379,7 @@ var Controller = function () {
         peerId: this.broadcast.peer.id
       });
 
-      var connection = this.broadcast.outConns.find(function (conn) {
-        return conn.peer === peerId;
-      });
-
-      if (connection) {
-        connection.send(operation);
-      } else {
-        connection = this.broadcast.peer.connect(peerId);
-        this.broadcast.addToOutConns(connection);
-        connection.on('open', function () {
-          connection.send(operation);
-        });
-      }
+      this.broadcast.sendSyncEnd(peerId, operation);
     }
   }, {
     key: 'handleRemoteOperation',

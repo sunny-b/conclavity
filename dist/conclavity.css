@@ -1,0 +1,475 @@
+@import url("https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css");
+
+/****************
+Fonts
+****************/
+
+@font-face {
+  font-family: "InputLight";
+  src: url('./fonts/InputSans-Light.ttf');
+}
+
+@font-face {
+  font-family: "InputMedium";
+  src: url('./fonts/InputSans-Medium.ttf');
+}
+
+/****************
+animations
+****************/
+
+@keyframes blinker {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/****************
+General
+****************/
+
+p {
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: rgb(17, 117, 232);
+  position: relative;
+}
+
+a:before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: rgb(17, 117, 232);
+  visibility: hidden;
+  -webkit-transform: scaleX(0);
+  transform: scaleX(0);
+  -webkit-transition: all 0.3s ease-in-out 0s;
+  transition: all 0.3s ease-in-out 0s;
+}
+
+a:hover:before, .selected a:before {
+  visibility: visible;
+  -webkit-transform: scaleX(1);
+  transform: scaleX(1);
+}
+
+.float-right {
+  float: right;
+}
+
+.hide, .hide * {
+  visibility: hidden;
+}
+
+.hide-outer {
+  visibility: hidden;
+}
+
+.disappear {
+  display: none !important;
+}
+
+.no-margin-bottom {
+  margin-bottom: 0px;
+}
+
+/****************
+Editor
+****************/
+
+#conclave {
+  font-family: "InputLight", Helvetica, sans-serif;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.editor {
+  display:flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 1250px;
+  width: 100%;
+  min-width: 800px;
+  justify-content: flex-start;
+  padding: 0 10px 25px;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.text-wrapper {
+  display: flex;
+  min-width: 600px;
+  justify-content: space-between;
+}
+
+.textarea {
+  position: relative;
+}
+
+.aside {
+  position: absolute;
+  left: -999px;
+  top: -9999px;
+}
+
+#ownName {
+  float: left;
+  margin-left: 5px;
+}
+
+#ownName span {
+  padding: 2px;
+  margin-left: 8px;
+}
+
+#peerId {
+  min-width: 150px;
+  flex-grow: 1;
+}
+
+#peerId li {
+  list-style-type: none;
+  margin: 3px 3px 11px 0px;
+  font-size: 14px;
+}
+
+#peerId span {
+  padding: 3px;
+}
+
+label, button {
+  padding: 0 15px;
+  border-radius: 5px;
+  border: 1px solid rgb(17, 117, 232);
+  margin: 0 0 10px 10px;
+  font-family: "InputLight", Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 32px;
+  display: inline-block;
+  color: rgb(17, 117, 232);
+  cursor: pointer;
+  background-color: white;
+  transition: all 0.2s ease-in-out 0s;
+}
+
+label:hover,
+button:hover {
+  background-color: rgb(17, 117, 232);
+  color: white;
+}
+
+label:active,
+button:active,
+button:focus,
+label:focus {
+  outline: none;
+}
+
+li {
+  list-style: none;
+}
+
+#file {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
+li span:hover {
+  cursor: pointer;
+}
+
+
+#newRoot, #newRoot2, #newRoot3, #newLink {
+  margin: 5px auto;
+  text-align: center;
+  font-size: 12px;
+  display: block;
+  visibility: hidden;
+}
+
+/****************
+Video
+****************/
+
+.video-modal {
+  width: 250px;
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  right: 0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.video-bar {
+  height: 36px;
+  border-top-right-radius: 6px;
+  border-top-left-radius: 6px;
+  width: 100%;
+  background-color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 15px;
+}
+
+.video-bar.mini {
+  border-radius: 6px;
+}
+
+.exit, .minimize {
+  cursor: pointer;
+}
+
+.video-modal span {
+  position: absolute;
+  bottom: 4px;
+  left: 15px;
+  padding: 2px 4px;
+  font-size: 12px;
+}
+
+.video-container {
+  width: 100%;
+}
+
+video {
+  width: 100%;
+  transform: rotateY(180deg);
+  -webkit-transform:rotateY(180deg);
+  -moz-transform:rotateY(180deg);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+
+/********************
+CodeMirror
+********************/
+
+.CodeMirror {
+  font-family: 'InputLight', Helvetica, sans-serif;
+  border-radius: 8px;
+  line-height: 1.5em;
+  border: none;
+  box-shadow: 0 2px 20px -2px rgba(17, 117, 232, 0.15);
+  clear: both;
+  padding: 0;
+  min-height: 500px;
+  width: 100%;
+}
+
+.CodeMirror-focused {
+  box-shadow: 0 2px 20px -2px rgba(17, 117, 232, 0.4);
+}
+
+.CodeMirror-scroll {
+  padding: 10px;
+  height: 100%;
+}
+
+.server-error {
+  display: flex;
+  position: absolute;
+  z-index: 10;
+  top: 15px;
+  color: white;
+  height: 22px;
+  width: calc(100% - 30px);
+  box-sizing: border-box;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  border-radius: 6px;
+  background-color: #ff8484;
+  transition: all 0.2s ease-in-out 0s;
+}
+
+.server-error:hover {
+  background-color: #f76262;
+}
+
+.server-error p {
+  flex-grow: 1;
+  font-size: 12px;
+  text-align: center;
+  display: inline-block;
+  position:relative;
+  z-index: 20;
+}
+
+.x {
+  cursor: pointer;
+  overflow: hidden;
+  opacity: 0.6;
+  height: 100%;
+  margin-right: 32px;
+}
+
+.server-msg-x {
+  width: 18px;
+}
+
+/********************
+Cursors
+********************/
+
+.remote-cursor {
+  width: 2px;
+  position: absolute;
+  top: 0px;
+}
+
+.flag {
+  top: -10px;
+  font-size: 12px;
+  left: 0px;
+  position: absolute;
+  line-height: 15px;
+}
+
+/********************
+Icons
+********************/
+
+.phone {
+  display: inline-block;
+}
+
+.phone-in,
+.phone-out,
+.phone-call {
+  display: none;
+}
+
+.calling .phone,
+.beingCalled .phone,
+.answered .phone {
+  display: none;
+}
+
+.calling .phone-out {
+  display: inline-block;
+  animation: blinker 1s cubic-bezier(.5, 0, 1, 1) infinite alternate;
+}
+
+.beingCalled .phone-in {
+  display: inline-block;
+  animation: blinker 1s cubic-bezier(.5, 0, 1, 1) infinite alternate;
+}
+
+.answered .phone-call {
+  display: inline-block;
+}
+
+.phone,
+.phone-in,
+.phone-out,
+.phone-call {
+  margin-left: 5px;
+  height: 20px;
+  vertical-align: -5px;
+  cursor: pointer;
+}
+
+.copy-link {
+  vertical-align: -7px;
+  height: 20px;
+  width: 20px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/***************
+ToolTip
+***************/
+
+[data-tooltip] {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* Hide the tooltip content by default */
+[data-tooltip]:before,
+[data-tooltip]:after {
+  visibility: hidden;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Position tooltip above the element */
+[data-tooltip]:before {
+  position: absolute;
+  top: 145%;
+  left: 95%;
+  margin-bottom: 5px;
+  margin-left: -80px;
+  padding: 7px;
+  width: 130px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background-color: #000;
+  background-color: hsla(0, 0%, 20%, 0.7);
+  color: #fff;
+  content: attr(data-tooltip);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Triangle hack to make tooltip look like a speech bubble */
+[data-tooltip]:after {
+  position: absolute;
+  top: 115%;
+  left: 55%;
+  margin-left: -5px;
+  width: 0;
+  border-bottom: 5px solid hsla(0, 0%, 20%, 0.7);
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  content: " ";
+  font-size: 0;
+  line-height: 0;
+}
+
+/* Show tooltip content on hover */
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after {
+  visibility: visible;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+  filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=100);
+  opacity: 1;
+}
+
+.copy-status {
+  opacity: 0;
+}
+
+.copy-status.copied {
+  animation: blinker 1s cubic-bezier(.5, 0, 1, 1);
+}

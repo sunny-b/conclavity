@@ -5,7 +5,8 @@
   "main": "conclave-transpiled.js",
   "scripts": {
     "test": "jasmine",
-    "build": "babel lib -d build && babel conclave.js -o conclave-transpiled.js"
+    "build": "babel lib -d build && babel conclave.js -o conclave-transpiled.js",
+    "debug": "babel example/script.js -o example/script-transpiled.js && browserify example/script-transpiled.js -o example/script-debug.js"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-3": "^6.24.1",
     "babel-register": "^6.26.0",
+    "browserify": "^14.5.0",
     "jasmine": "^2.8.0",
     "jsdom": "^11.3.0"
   }

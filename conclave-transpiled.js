@@ -47,7 +47,7 @@ var Conclave = function () {
   _createClass(Conclave, [{
     key: 'generateConclaveEditor',
     value: function generateConclaveEditor(options) {
-      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
+      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span id="myLinkInput" class="disappear aside"></span>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
 
       var $editor = (0, _jquery2.default)(editorHTMLStr);
       (0, _jquery2.default)('#conclave').append($editor).addClass('hide');
@@ -58,9 +58,8 @@ var Conclave = function () {
     value: function initializeController(options) {
       var peer = options.peer || new _peerjs_fork_firefox2.default({
         host: 'conclavepeerjs.herokuapp.com',
+        port: 443,
         secure: true,
-        key: 'peerjs',
-        port: location.port || (location.protocol === 'https:' ? 443 : 80),
         config: { 'iceServers': [{ url: 'stun:stun1.l.google.com:19302' }, { url: 'turn:numb.viagenie.ca',
             credential: 'conclave-rulez',
             username: 'sunnysurvies@gmail.com'
@@ -69,11 +68,13 @@ var Conclave = function () {
         debug: 1
       });
 
-      this.controller = new _controller2.default(location.search.slice(1) || '0', location.origin, peer, new _simplemde2.default({
+      var locale = !!location.origin.match(/file:\/\//) ? location.href.split('?')[0] : location.origin;
+
+      this.controller = new _controller2.default(location.search.slice(1) || '0', locale, peer, new _simplemde2.default({
         placeholder: options.placeholder,
         spellChecker: false,
         toolbar: false,
-        autofocus: true,
+        autofocus: false,
         indentWithTabs: true,
         status: false,
         tabSize: 4,
@@ -81,6 +82,8 @@ var Conclave = function () {
         lineWrapping: false,
         shortCuts: []
       }), options);
+
+      this.controller.init();
     }
   }]);
 

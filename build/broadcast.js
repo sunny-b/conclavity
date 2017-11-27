@@ -33,7 +33,7 @@ var Broadcast = function (_EventEmitter) {
     _this.MAX_BUFFER_SIZE = 40;
     _this.currentStream = null;
 
-    _this.bindServerEvents(targetPeerId, siteId);
+    _this.onOpen(targetPeerId, siteId);
     return _this;
   }
 
@@ -49,9 +49,26 @@ var Broadcast = function (_EventEmitter) {
       });
     }
   }, {
+    key: 'sendSyncEnd',
+    value: function sendSyncEnd(peerId, operation) {
+      var connection = this.outConns.find(function (conn) {
+        return conn.peer === peerId;
+      });
+
+      if (connection) {
+        connection.send(operation);
+      } else {
+        connection = this.peer.connect(peerId);
+        this.addToOutConns(connection);
+        connection.on('open', function () {
+          connection.send(operation);
+        });
+      }
+    }
+  }, {
     key: 'addToOutgoingBuffer',
     value: function addToOutgoingBuffer(operation) {
-      if (this.outgoingBuffer.length === this.MAX_BUFFER_SIZE) {
+      if (this.outgoingBuffer.length >= this.MAX_BUFFER_SIZE) {
         this.outgoingBuffer.shift();
       }
 
@@ -66,11 +83,6 @@ var Broadcast = function (_EventEmitter) {
       this.outgoingBuffer.forEach(function (op) {
         connection.send(op);
       });
-    }
-  }, {
-    key: 'bindServerEvents',
-    value: function bindServerEvents(targetPeerId, siteId) {
-      this.onOpen(targetPeerId, siteId);
     }
   }, {
     key: 'onOpen',
@@ -107,6 +119,7 @@ var Broadcast = function (_EventEmitter) {
         switch (err.type) {
           case 'peer-unavailable':
             var pid = String(err).replace("Error: Could not connect to peer ", "");
+            _this4.emit('peerError');
             _this4.removeFromConnections(pid);
             break;
           case 'disconnected':

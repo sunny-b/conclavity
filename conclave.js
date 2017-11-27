@@ -31,6 +31,7 @@ class Conclave {
                             <div class="header">
                               <p class='share-link hide'>
                                 <a id='myLink' target="_blank">Public Share Link</a>
+                                <span id="myLinkInput" class="disappear aside"></span>
                                 <span class="copy-container" data-tooltip="Copy to Clipboard"></span>
                                 <span class="copy-status">Copied!</span>
                               </p>
@@ -61,9 +62,8 @@ class Conclave {
     const peer = options.peer || new Peer(
       {
         host: 'conclavepeerjs.herokuapp.com',
+        port: 443,
         secure: true,
-        key: 'peerjs',
-        port: location.port || (location.protocol === 'https:' ? 443 : 80),
         config: {'iceServers':
           [
             { url: 'stun:stun1.l.google.com:19302' },
@@ -77,15 +77,17 @@ class Conclave {
       }
     );
 
+    const locale = !!location.origin.match(/file:\/\//) ? location.href.split('?')[0] : location.origin;
+
     this.controller = new Controller(
       (location.search.slice(1) || '0'),
-      location.origin,
+      locale,
       peer,
       new SimpleMDE({
         placeholder: options.placeholder,
         spellChecker: false,
         toolbar: false,
-        autofocus: true,
+        autofocus: false,
         indentWithTabs: true,
         status: false,
         tabSize: 4,

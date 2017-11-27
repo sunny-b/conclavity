@@ -41,7 +41,6 @@ var View = function (_EventEmitter) {
     _this.options = options;
     _this.icons = _featherIcons2.default.icons;
     _this.calling = [];
-    _this.bindViewEvents();
     return _this;
   }
 
@@ -78,15 +77,17 @@ var View = function (_EventEmitter) {
   }, {
     key: 'displayServerError',
     value: function displayServerError() {
-      (0, _jquery2.default)('.server-error').removeClass('hide-outer');
+      document.querySelector('.server-error').classList.remove('disappear');
     }
   }, {
     key: 'updateShareLink',
     value: function updateShareLink(id, host) {
       var shareLink = host + '?' + id;
       var aTag = document.querySelector('#myLink');
+      var pTag = document.querySelector('#myLinkInput');
 
       aTag.setAttribute('href', shareLink);
+      pTag.textContent = shareLink;
     }
   }, {
     key: 'updateUrl',
@@ -183,11 +184,11 @@ var View = function (_EventEmitter) {
   }, {
     key: 'attachErrorMessage',
     value: function attachErrorMessage() {
-      var $errMsg = (0, _jquery2.default)('<div class="server-error hide-outer">\n        <p>Lost connection. Don\'t panic, you can still talk to peers. Please refresh to reconnect.</p>\n        <span class="x">\n          ' + this.icons.x.toSvg({ class: 'server-msg-x', 'stroke-width': 2, color: 'black' }) + '\n        </span>\n      </div>');
+      var $errMsg = (0, _jquery2.default)('<div class="server-error disappear">\n        <p>Lost connection. Don\'t panic, you can still talk to peers. Please refresh to reconnect.</p>\n        <span class="x">\n          ' + this.icons.x.toSvg({ class: 'server-msg-x', 'stroke-width': 2, color: 'black' }) + '\n        </span>\n      </div>');
 
       (0, _jquery2.default)('.textarea').append($errMsg);
       (0, _jquery2.default)('.server-msg-x').click(function () {
-        return (0, _jquery2.default)('.server-error').addClass('hide-outer');
+        return (0, _jquery2.default)('.server-error').addClass('disappear');
       });
     }
   }, {
@@ -196,7 +197,7 @@ var View = function (_EventEmitter) {
       var _this2 = this;
 
       (0, _jquery2.default)('.copy-container').click(function () {
-        return _this2.copyToClipboard('#myLink');
+        return _this2.copyToClipboard('#myLinkInput');
       });
     }
   }, {

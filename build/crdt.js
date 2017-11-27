@@ -350,10 +350,13 @@ var CRDT = function (_EventEmitter) {
       switch (this.strategy) {
         case 'plus':
           strategy = '+';
+          break;
         case 'minus':
           strategy = '-';
+          break;
         case 'random':
           strategy = Math.round(Math.random()) === 0 ? '+' : '-';
+          break;
         default:
           strategy = level % 2 === 0 ? '+' : '-';
       }
