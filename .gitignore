@@ -1,3 +1,4 @@
 /node_modules
 .DS_Store
-/example
+/example/script-debug.js
+/example/script-transpiled.js
