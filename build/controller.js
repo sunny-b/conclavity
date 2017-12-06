@@ -122,9 +122,6 @@ var Controller = function () {
       this.broadcast.on('sync', function (dataObj) {
         return _this.handleSync(dataObj);
       });
-      this.broadcast.on('sendSync', function (peerId, siteId) {
-        return _this.handleSendSync(peerId, siteId);
-      });
       this.broadcast.on('addToNetwork', function (peerId, siteId) {
         return _this.addToNetwork(peerId, siteId);
       });
@@ -161,8 +158,8 @@ var Controller = function () {
       this.broadcast.on('findNewTarget', function () {
         return _this.findNewTarget();
       });
-      this.broadcast.on('redistribute', function (peerId, siteId) {
-        return _this.handleRedistribute(peerId, siteId);
+      this.broadcast.on('connRequest', function (peerId, siteId) {
+        return _this.evaluateRequest(peerId, siteId);
       });
     }
   }, {
@@ -195,11 +192,15 @@ var Controller = function () {
       this.view.enableEditor();
     }
   }, {
-    key: 'handleRedistribute',
-    value: function handleRedistribute(peerId, siteId) {
+    key: 'evaluateRequest',
+    value: function evaluateRequest(peerId, siteId) {
       var halfTheNetwork = Math.ceil(this.network.length / 2);
 
-      this.broadcast.redistribute(peerId, siteId, halfTheNetwork);
+      if (this.broadcast.hasReachedMax(halfTheNetwork)) {
+        this.broadcast.forwardRequest(peerId, siteId);
+      } else {
+        this.syncTo(peerId, siteId);
+      }
     }
   }, {
     key: 'handlePeerClose',
@@ -214,8 +215,8 @@ var Controller = function () {
       this.removeFromNetwork(peerId);
     }
   }, {
-    key: 'handleSendSync',
-    value: function handleSendSync(peerId, siteId) {
+    key: 'syncTo',
+    value: function syncTo(peerId, siteId) {
       var initialData = JSON.stringify({
         type: 'sync',
         siteId: this.siteId,

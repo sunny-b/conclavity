@@ -33,11 +33,42 @@ var Broadcast = function (_EventEmitter) {
     _this.MAX_BUFFER_SIZE = 40;
     _this.currentStream = null;
 
-    _this.onOpen(targetPeerId, siteId);
+    _this.init(targetPeerId, siteId);
     return _this;
   }
 
   _createClass(Broadcast, [{
+    key: 'init',
+    value: function init(targetPeerId, siteId) {
+      this.heartbeat = this.startPeerHeartBeat(this.peer);
+      this.onOpen(targetPeerId, siteId);
+    }
+  }, {
+    key: 'startPeerHeartBeat',
+    value: function startPeerHeartBeat(peer) {
+      var timeoutId = 0;
+      var heartbeat = function heartbeat() {
+        timeoutId = setTimeout(heartbeat, 20000);
+        if (peer.socket._wsOpen()) {
+          peer.socket.send({ type: 'HEARTBEAT' });
+        }
+      };
+
+      heartbeat();
+
+      return {
+        start: function start() {
+          if (timeoutId === 0) {
+            heartbeat();
+          }
+        },
+        stop: function stop() {
+          clearTimeout(timeoutId);
+          timeoutId = 0;
+        }
+      };
+    }
+  }, {
     key: 'send',
     value: function send(operation) {
       var operationJSON = JSON.stringify(operation);
@@ -243,6 +274,27 @@ var Broadcast = function (_EventEmitter) {
       }
     }
   }, {
+    key: 'hasReachedMax',
+    value: function hasReachedMax(halfTheNetwork) {
+      var tooManyInConns = this.inConns.length > Math.max(halfTheNetwork, 5);
+      var tooManyOutConns = this.outConns.length > Math.max(halfTheNetwork, 5);
+
+      return tooManyInConns || tooManyOutConns;
+    }
+  }, {
+    key: 'forwardRequest',
+    value: function forwardRequest(peerId, siteId) {
+      var connected = this.outConns.filter(function (conn) {
+        return conn.peer !== peerId;
+      });
+      var randomIdx = Math.floor(Math.random() * connected.length);
+      connected[randomIdx].send(JSON.stringify({
+        type: 'connRequest',
+        peerId: peerId,
+        siteId: siteId
+      }));
+    }
+  }, {
     key: 'onPeerConnection',
     value: function onPeerConnection() {
       var _this5 = this;
@@ -341,7 +393,7 @@ var Broadcast = function (_EventEmitter) {
 
         switch (dataObj.type) {
           case 'connRequest':
-            _this8.emit('redistribute', dataObj.peerId, dataObj.siteId);
+            _this8.emit('connRequest', dataObj.peerId, dataObj.siteId);
             break;
           case 'sync':
             _this8.processOutgoingBuffer(dataObj.peerId);
