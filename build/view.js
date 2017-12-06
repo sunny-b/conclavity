@@ -241,14 +241,17 @@ var View = function (_EventEmitter) {
     value: function streamVideo(stream, callObj) {
       var peerFlag = this.getPeerFlagById(callObj.peer);
       var peerClone = peerFlag.cloneNode(true);
+      var color = peerFlag.style.backgroundColor;
       var modal = document.querySelector('.video-modal');
       var vidContainer = document.querySelector('.video-container');
+      var bar = document.querySelector('.video-bar');
       var vid = document.querySelector('.video-modal video');
 
       this.answerCall(callObj.peer);
       peerClone.style.backgroundColor = peerClone.style.backgroundColor.replace('0.5', '1');
 
       modal.classList.remove('hide');
+      bar.style.backgroundColor = color.replace("0.5", "1");
       vidContainer.appendChild(peerClone);
       vid.srcObject = stream;
       vid.play();
