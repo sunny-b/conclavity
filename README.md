@@ -25,7 +25,7 @@ npm install --save conclavity
 
 ![Conclavity install](/dist/img/conclavity-shell.gif)
 
-### 2. Created an empty div with an ID of "Conclave"
+### 2. Create an empty div with an ID of "Conclave"
 
 ```html
 <html>
@@ -43,13 +43,13 @@ npm install --save conclavity
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/conclavity@latest/dist/conclavity.css" />
 ```
 
-### 4. Create a new instance of Conclave
+### 4. Create a new instance of Conclavity
 
 ```javascript
 // script.js
-import Conclave from 'conclavity';
+import Conclavity from 'conclavity';
 
-new Conclave();
+new Conclavity();
 ```
 ----
 ## Usage
