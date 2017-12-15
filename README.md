@@ -4,7 +4,7 @@
 
 ## Demo
 
-![Conclavity install](/dist/img/conclavity-demo.gif)
+![Conclavity demo](/dist/img/conclavity-demo.gif)
 
 ## Summary
 
