@@ -13,6 +13,7 @@ class Conclave {
       video: true,
       changeUrl: true,
       errorMessage:true,
+      showPeers: true,
       peersLeft: true,
       placeholder: 'Share the link to invite collaborators to your room'
     };
@@ -30,6 +31,7 @@ class Conclave {
                           </div>
                           <div class="editor">
                             <div class="header">
+                              <div class="peer-toggle show"></div>  
                               <p class='share-link hide'>
                                 <a id='myLink' target="_blank">Public Share Link</a>
                                 <span id="myLinkInput" class="disappear aside"></span>
@@ -58,6 +60,7 @@ class Conclave {
     $('#conclave').append($editor).addClass('hide');
     if (options.shareLink) $('.share-link').removeClass('hide');
     if (!options.peersLeft) $('.text-wrapper').addClass('reverse');
+    if (!options.showPeers) $('#peerId').addClass('disappear');
   }
 
   initializeController(options) {

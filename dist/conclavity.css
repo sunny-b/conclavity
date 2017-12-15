@@ -82,6 +82,24 @@ a:hover:before, .selected a:before {
 Editor
 ****************/
 
+.peer-toggle {
+  cursor: pointer;
+}
+
+.peer-toggle .toggle-minus {
+  display: none;
+}
+
+.peer-toggle.show .toggle-plus {
+  display: none;
+}
+
+.peer-toggle.show .toggle-minus {
+  display: inline-block;
+}
+
+.peer-toggle
+
 #conclave {
   font-family: "InputLight", Helvetica, sans-serif;
   width: 100%;

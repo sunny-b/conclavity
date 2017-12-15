@@ -167,6 +167,7 @@ var View = function (_EventEmitter) {
     value: function bindViewEvents() {
       this.addIcons();
       this.bindCopyEvent();
+      this.attachPeerListEvents();
       this.attachModalEvents();
       this.checkBrowser();
 
@@ -203,12 +204,15 @@ var View = function (_EventEmitter) {
   }, {
     key: 'addIcons',
     value: function addIcons() {
-      var minimize = this.icons.minus.toSvg({ 'stroke-width': 3, color: 'white', class: 'minimize' });
-      var exit = this.icons.x.toSvg({ 'stroke-width': 3, color: 'white', class: 'exit' });
+      var blueMinimize = this.icons['minus-circle'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-minus' });
+      var bluePlus = this.icons['plus-circle'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-plus' });
+      var whiteMinimize = this.icons.minus.toSvg({ 'stroke-width': 2, color: 'white', class: 'minimize' });
+      var exit = this.icons.x.toSvg({ 'stroke-width': 2, color: 'white', class: 'exit' });
       var copy = this.icons.copy.toSvg({ color: 'rgb(17, 117, 232)', class: 'copy-link' });
 
-      (0, _jquery2.default)('.video-bar').append(minimize, exit);
+      (0, _jquery2.default)('.video-bar').append(whiteMinimize, exit);
       (0, _jquery2.default)('.copy-container').append(copy);
+      (0, _jquery2.default)('.peer-toggle').append(blueMinimize, bluePlus);
     }
   }, {
     key: 'answerCall',
@@ -305,6 +309,14 @@ var View = function (_EventEmitter) {
         modal.classList.add('hide');
         callObj.close();
       };
+    }
+  }, {
+    key: 'attachPeerListEvents',
+    value: function attachPeerListEvents() {
+      (0, _jquery2.default)('.peer-toggle').click(function (e) {
+        (0, _jquery2.default)('.peer-toggle').toggleClass('show');
+        (0, _jquery2.default)('#peerId').toggleClass('disappear');
+      });
     }
   }, {
     key: 'attachModalEvents',

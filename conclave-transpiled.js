@@ -36,6 +36,7 @@ var Conclave = function () {
       video: true,
       changeUrl: true,
       errorMessage: true,
+      showPeers: true,
       peersLeft: true,
       placeholder: 'Share the link to invite collaborators to your room'
     };
@@ -48,12 +49,13 @@ var Conclave = function () {
   _createClass(Conclave, [{
     key: 'generateConclaveEditor',
     value: function generateConclaveEditor(options) {
-      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span id="myLinkInput" class="disappear aside"></span>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
+      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <div class="peer-toggle show"></div>  \n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span id="myLinkInput" class="disappear aside"></span>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
 
       var $editor = (0, _jquery2.default)(editorHTMLStr);
       (0, _jquery2.default)('#conclave').append($editor).addClass('hide');
       if (options.shareLink) (0, _jquery2.default)('.share-link').removeClass('hide');
       if (!options.peersLeft) (0, _jquery2.default)('.text-wrapper').addClass('reverse');
+      if (!options.showPeers) (0, _jquery2.default)('#peerId').addClass('disappear');
     }
   }, {
     key: 'initializeController',
