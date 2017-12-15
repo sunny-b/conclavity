@@ -72,7 +72,7 @@ describe('View', () => {
       const host = 'http://localhost:3000/'
       const id = '123';
       view.updateShareLink(id, host);
-      const value = document.querySelector("#myLinkInput").getAttribute('value');
+      const value = document.querySelector("#myLinkInput").textContent
       expect(value).toEqual(host+"?" + id);
     });
   });

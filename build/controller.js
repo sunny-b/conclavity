@@ -82,6 +82,7 @@ var Controller = function () {
       this.editor.bindButtons(this.urlId);
       this.generateOwnName();
       if (this.urlId == 0) this.view.enableEditor();
+      this.broadcast.startPeerHeartBeat();
       this.bindEmitterEvents();
     }
   }, {

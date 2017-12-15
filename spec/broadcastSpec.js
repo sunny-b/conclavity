@@ -52,7 +52,7 @@ describe('Broadcast', () => {
 
     it('does not add the operation to the outgoing buffer otherwise', () => {
       spyOn(broadcast, 'addToOutgoingBuffer');
-      broadcast.send({type: 'add to network'});
+      broadcast.send({type: 'addToNetwork'});
       expect(broadcast.addToOutgoingBuffer).not.toHaveBeenCalled();
     });
   });
@@ -207,10 +207,10 @@ describe('Broadcast', () => {
   describe("addToNetwork", () => {
     const broadcast = new Broadcast(12345, mockPeer, siteId);
 
-    it("calls send with type 'add to network' and newPeer and siteId passed in", () => {
+    it("calls send with type 'addToNetwork' and newPeer and siteId passed in", () => {
       spyOn(broadcast, "send");
       broadcast.addToNetwork(5, '10');
-      expect(broadcast.send).toHaveBeenCalledWith({type:'add to network',newPeer:5, newSite: '10'});
+      expect(broadcast.send).toHaveBeenCalledWith({type:'addToNetwork',newPeer:5, newSite: '10'});
     });
   });
 
@@ -220,7 +220,7 @@ describe('Broadcast', () => {
     it("calls send with type 'remove to network' and oldPeer of id passed in", () => {
       spyOn(broadcast, "send");
       broadcast.removeFromNetwork(5);
-      expect(broadcast.send).toHaveBeenCalledWith({type:'remove from network', oldPeer:5});
+      expect(broadcast.send).toHaveBeenCalledWith({type:'removeFromNetwork', oldPeer:5});
     });
   });
 

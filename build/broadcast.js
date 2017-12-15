@@ -42,23 +42,24 @@ var Broadcast = function (_EventEmitter) {
   _createClass(Broadcast, [{
     key: 'init',
     value: function init(targetPeerId, siteId) {
-      this.heartbeat = this.startPeerHeartBeat(this.peer);
       this.onOpen(targetPeerId, siteId);
     }
   }, {
     key: 'startPeerHeartBeat',
-    value: function startPeerHeartBeat(peer) {
+    value: function startPeerHeartBeat() {
+      var _this2 = this;
+
       var timeoutId = 0;
       var heartbeat = function heartbeat() {
         timeoutId = setTimeout(heartbeat, 20000);
-        if (peer.socket._wsOpen()) {
-          peer.socket.send({ type: 'HEARTBEAT' });
+        if (_this2.peer.socket._wsOpen()) {
+          _this2.peer.socket.send({ type: 'HEARTBEAT' });
         }
       };
 
       heartbeat();
 
-      return {
+      this.heartbeat = {
         start: function start() {
           if (timeoutId === 0) {
             heartbeat();
@@ -120,48 +121,48 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onOpen',
     value: function onOpen(targetPeerId, siteId) {
-      var _this2 = this;
+      var _this3 = this;
 
       this.peer.on('open', function (id) {
-        _this2.emit('serverOpen', id);
-        _this2.onPeerConnection();
-        _this2.onError();
-        _this2.onDisconnect();
+        _this3.emit('serverOpen', id);
+        _this3.onPeerConnection();
+        _this3.onError();
+        _this3.onDisconnect();
         if (targetPeerId == 0) {
-          _this2.emit('addToNetwork', id, siteId);
+          _this3.emit('addToNetwork', id, siteId);
         } else {
-          _this2.requestConnection(targetPeerId, id, siteId);
+          _this3.requestConnection(targetPeerId, id, siteId);
         }
       });
     }
   }, {
     key: 'onDisconnect',
     value: function onDisconnect() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.peer.on('disconnected', function () {
-        _this3.emit('serverError');
+        _this4.emit('serverError');
       });
     }
   }, {
     key: 'onError',
     value: function onError() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.peer.on("error", function (err) {
         switch (err.type) {
           case 'peer-unavailable':
             var pid = String(err).replace("Error: Could not connect to peer ", "");
-            _this4.emit('peerError');
-            _this4.removeFromConnections(pid);
+            _this5.emit('peerError');
+            _this5.removeFromConnections(pid);
             break;
           case 'disconnected':
           case 'network':
           case 'server-error':
-            _this4.emit('serverError');
+            _this5.emit('serverError');
             break;
           case 'browser-incompatible':
-            _this4.emit('wrongBrowser');
+            _this5.emit('wrongBrowser');
             break;
         }
       });
@@ -316,12 +317,12 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'findSecondary',
     value: function findSecondary(network) {
-      var _this5 = this;
+      var _this6 = this;
 
       if (network.length === 2) return;
 
       var filteredNetwork = network.filter(function (conn) {
-        return conn.peerId !== _this5.peer.id;
+        return conn.peerId !== _this6.peer.id;
       });
       var secondaryConn = filteredNetwork[filteredNetwork.length - 1];
       this.requestSecondaryConnection(secondaryConn.peerId, this.peer.id, this.siteId);
@@ -360,13 +361,13 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onPeerConnection',
     value: function onPeerConnection() {
-      var _this6 = this;
+      var _this7 = this;
 
       this.peer.on('connection', function (connection) {
-        _this6.onConnection(connection);
-        _this6.onVideoCall(connection);
-        _this6.onData(connection);
-        _this6.onConnClose(connection);
+        _this7.onConnection(connection);
+        _this7.onVideoCall(connection);
+        _this7.onData(connection);
+        _this7.onConnClose(connection);
       });
     }
   }, {
@@ -404,10 +405,10 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onVideoCall',
     value: function onVideoCall() {
-      var _this7 = this;
+      var _this8 = this;
 
       this.peer.on('call', function (callObj) {
-        _this7.emit('videoCall', callObj);
+        _this8.emit('videoCall', callObj);
       });
     }
   }, {
@@ -421,18 +422,18 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onStream',
     value: function onStream(callObj) {
-      var _this8 = this;
+      var _this9 = this;
 
       callObj.on('stream', function (stream) {
-        if (_this8.currentStream) {
-          _this8.currentStream.close();
+        if (_this9.currentStream) {
+          _this9.currentStream.close();
         }
-        _this8.currentStream = callObj;
+        _this9.currentStream = callObj;
 
-        _this8.emit('videoStream', stream, callObj);
+        _this9.emit('videoStream', stream, callObj);
 
         callObj.on('close', function () {
-          return _this8.onStreamClose(callObj.peer);
+          return _this9.onStreamClose(callObj.peer);
         });
       });
     }
@@ -449,44 +450,44 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onData',
     value: function onData(connection) {
-      var _this9 = this;
+      var _this10 = this;
 
       connection.on('data', function (data) {
         var dataObj = JSON.parse(data);
 
         switch (dataObj.type) {
           case 'connRequest':
-            _this9.evaluateRequest(dataObj.peerId, dataObj.siteId);
+            _this10.evaluateRequest(dataObj.peerId, dataObj.siteId);
             break;
           case 'secondaryRequest':
-            _this9.evaluateSecondary(dataObj.peerId, dataObj.siteId);
+            _this10.evaluateSecondary(dataObj.peerId, dataObj.siteId);
             break;
           case 'sync':
-            _this9.processOutgoingBuffer(dataObj.peerId);
-            _this9.findSecondary(dataObj.network);
-            _this9.emit('sync', dataObj);
+            _this10.processOutgoingBuffer(dataObj.peerId);
+            _this10.findSecondary(dataObj.network);
+            _this10.emit('sync', dataObj);
             break;
           case 'syncEnd':
-            _this9.processOutgoingBuffer(dataObj.peerId);
+            _this10.processOutgoingBuffer(dataObj.peerId);
             break;
           case 'addToNetwork':
-            _this9.emit('addToNetwork', dataObj.newPeer, dataObj.newSite);
+            _this10.emit('addToNetwork', dataObj.newPeer, dataObj.newSite);
             break;
           case 'removeFromNetwork':
-            _this9.emit('removeFromNetwork', dataObj.oldPeer);
+            _this10.emit('removeFromNetwork', dataObj.oldPeer);
             break;
           default:
-            _this9.emit('remoteOperation', dataObj);
+            _this10.emit('remoteOperation', dataObj);
         }
       });
     }
   }, {
     key: 'randomId',
     value: function randomId() {
-      var _this10 = this;
+      var _this11 = this;
 
       var possConns = this.inConns.filter(function (conn) {
-        return _this10.peer.id !== conn.peer;
+        return _this11.peer.id !== conn.peer;
       });
       var randomIdx = Math.floor(Math.random() * possConns.length);
       if (possConns[randomIdx]) {
@@ -505,14 +506,14 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onConnClose',
     value: function onConnClose(connection) {
-      var _this11 = this;
+      var _this12 = this;
 
       connection.on('close', function () {
-        _this11.removeFromConnections(connection.peer);
-        _this11.emit('peerClose', connection.peer, _this11.randomId());
+        _this12.removeFromConnections(connection.peer);
+        _this12.emit('peerClose', connection.peer, _this12.randomId());
 
-        if (_this11.inConns.length < 5 || _this11.outConns.length < 5) {
-          _this11.emit('findNewTarget');
+        if (_this12.inConns.length < 5 || _this12.outConns.length < 5) {
+          _this12.emit('findNewTarget');
         }
       });
     }

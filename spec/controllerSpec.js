@@ -137,7 +137,7 @@ describe("Controller", () => {
 
     it("pushes the id into the network list", () => {
       controller.addToNetwork("a", '11');
-      expect(controller.network).toContain({peerId: "a", siteId: '11'});
+      expect(controller.network).toContain({peerId: "a", siteId: '11', active: true});
     });
 
     it("calls addToListOfPeers with the id passed in if it is not its own id", () => {
@@ -159,7 +159,7 @@ describe("Controller", () => {
     beforeEach(() => {
       controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
       controller.view = mockView;
-      controller.network.push({peerId: 'b', siteId: '10'});
+      controller.network.push({peerId: 'b', siteId: '10', active: true});
       controller.addToListOfPeers('10', "b");
     });
 
@@ -171,9 +171,9 @@ describe("Controller", () => {
       expect(controller.view.removeFromListOfPeers).not.toHaveBeenCalled();
     });
 
-    it("removes the id from the network list", () => {
+    it("turns active status to false", () => {
       controller.removeFromNetwork("b");
-      expect(controller.network.length).toEqual(0);
+      expect(controller.network[0].active).toEqual(false);
     });
 
     it("calls removeFromListOfPeers with the id passed in", () => {
@@ -311,11 +311,11 @@ describe("Controller", () => {
       controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
       controller.view = mockView;
       controller.editor = mockEditor;
-      mockOperation = {};
+      mockOperation = {version: {siteId: '4', counter: 2}};
 
       spyOn(controller.vector, "hasBeenApplied");
       spyOn(controller, "applyOperation");
-      spyOn(controller, "processDeletionBuffer");
+      spyOn(controller, "processBuffer");
       spyOn(controller.broadcast, "send");
     })
 
@@ -324,22 +324,23 @@ describe("Controller", () => {
       expect(controller.vector.hasBeenApplied).toHaveBeenCalled();
     });
 
-    it("calls applyOperation for an insert", () => {
+    it("pushes operation to buffer if insert", () => {
       const insertOperation = {
         type: 'insert',
-        char: { siteId: 0, counter: 0, position: []},
-        version: [],
+        char: { siteId: '0', counter: 0, position: []},
+        version: { siteId: '0', counter: 0 },
       };
 
+      expect(controller.buffer.length).toBe(0);
       controller.handleRemoteOperation(insertOperation);
-      expect(controller.applyOperation).toHaveBeenCalled();
+      expect(controller.buffer.length).toBe(1);
     });
 
     it("pushes operation to buffer for a delete", () => {
       const deleteOperation = {
         type: 'delete',
         char: { siteId: 0, counter: 0, position: []},
-        version: [],
+        version: { siteId: '0', counter: 0 },
       };
 
       expect(controller.buffer.length).toBe(0);
@@ -349,7 +350,7 @@ describe("Controller", () => {
 
     it("calls processDeletionBuffer", () => {
       controller.handleRemoteOperation(mockOperation);
-      expect(controller.processDeletionBuffer).toHaveBeenCalled();
+      expect(controller.processBuffer).toHaveBeenCalled();
     });
 
     it("calls broadcast.send", () => {
@@ -358,7 +359,7 @@ describe("Controller", () => {
     });
   });
 
-  describe("processDeletionBuffer", () => {
+  describe("processBuffer", () => {
     let controller, op1, op2, version1, version2;
 
     beforeEach(() => {
@@ -378,7 +379,7 @@ describe("Controller", () => {
     })
 
     it("calls vector.hasBeenApplied for each operation in buffer", () => {
-      controller.processDeletionBuffer();
+      controller.processBuffer();
       expect(controller.hasInsertionBeenApplied).toHaveBeenCalledWith(op1);
       expect(controller.hasInsertionBeenApplied).toHaveBeenCalledWith(op2);
     });
@@ -388,7 +389,7 @@ describe("Controller", () => {
         return true;
       }
 
-      controller.processDeletionBuffer();
+      controller.processBuffer();
       expect(controller.applyOperation).toHaveBeenCalledWith(op1);
     });
 
@@ -397,7 +398,7 @@ describe("Controller", () => {
         return false;
       }
 
-      controller.processDeletionBuffer();
+      controller.processBuffer();
       expect(controller.applyOperation).not.toHaveBeenCalledWith(op1);
     });
 
@@ -406,7 +407,7 @@ describe("Controller", () => {
         return true;
       }
       expect(controller.buffer.length).toBe(2);
-      controller.processDeletionBuffer();
+      controller.processBuffer();
       expect(controller.buffer.length).toBe(0);
     });
   });
@@ -418,7 +419,7 @@ describe("Controller", () => {
       controller = new Controller(targetPeerId, host, mockPeer, mockMDE, mockOptions);
       controller.view = mockView;
       controller.editor = mockEditor;
-      operation = {type: "delete", char: {siteId: 1, counter: 1}};
+      operation = {type: "delete", chars: [{siteId: 1, counter: 1}]};
 
       spyOn(controller.vector, "hasBeenApplied");
     })
@@ -449,7 +450,7 @@ describe("Controller", () => {
     it("calls crdt.handleRemoteInsert if it's an insert", () => {
       const operation = {
         type: "insert",
-        char: { siteId: 0, counter: 0, position: []},
+        chars: [{ siteId: 0, counter: 0, position: []}],
         version: {siteId: 8, counter: 9}
       };
       controller.applyOperation(operation);
@@ -459,7 +460,7 @@ describe("Controller", () => {
     it("calls crdt.handleRemoteDelete if it's a delete", () => {
       const operation = {
         type: "delete",
-        char: { siteId: 0, counter: 0, position: []},
+        chars: [{ siteId: 0, counter: 0, position: []}],
         version: {siteId: 8, counter: 9}
       };
       controller.applyOperation(operation);
@@ -469,10 +470,10 @@ describe("Controller", () => {
     it("calls creates the proper char and identifier objects to pass to handleRemoteInsert/handleRemoteDelete", () => {
       const operation = {
         type: "insert",
-        char: { siteId: 4, counter: 5, value: "a", position: [{digit: 6, siteId: 7}] },
+        chars: [{ siteId: 4, counter: 5, value: "a", position: [{digit: 6, siteId: 7}] }],
         version: {siteId: 8, counter: 9}
       };
-      const newChar = new Char("a", 5, 4, [new Identifier(6, 7)]);
+      const newChar = [new Char("a", 5, 4, [new Identifier(6, 7)])];
 
       controller.applyOperation(operation);
       expect(controller.crdt.remoteInsert).toHaveBeenCalledWith(newChar);
@@ -481,7 +482,7 @@ describe("Controller", () => {
     it("calls vector.update with the operation's version", () => {
       const dataObj = {
         op: "insert",
-        char: { siteId: 0, counter: 0, position: []},
+        chars: [{ siteId: 0, counter: 0, position: []}],
         version: {siteId: 8, counter: 9}
       };
 
@@ -534,16 +535,15 @@ describe("Controller", () => {
       controller.editor = mockEditor;
       const identifier1 = new Identifier(4, 5);
       const identifier2 = new Identifier(6, 7);
-      newChar = new Char("a", 1, 0, [identifier1, identifier2]);
+      newChar = [new Char("a", 1, 0, [identifier1, identifier2])];
 
       spyOn(controller.vector, "getLocalVersion");
       spyOn(controller.broadcast, "send");
     })
 
-    it("calls vector.getLocalVersion", () => {
-      const version = controller.vector.getLocalVersion();
-      controller.broadcastInsertion(newChar, version);
-      expect(controller.broadcast.send).toHaveBeenCalledWith({type: 'insert',char: newChar,version: version});
+    it("calls send", () => {
+      controller.broadcastInsertion(newChar);
+      expect(controller.broadcast.send).toHaveBeenCalled();
     });
   });
 
@@ -564,10 +564,10 @@ describe("Controller", () => {
 
     it("calls broadcast.send with the correct operation", () => {
       const version = controller.vector.getLocalVersion();
-      controller.broadcastDeletion(newChar, version);
+      controller.broadcastDeletion([newChar]);
       const operation = {
         type: 'delete',
-        char: newChar,
+        chars: [newChar],
         version: version
       }
       expect(controller.broadcast.send).toHaveBeenCalledWith(operation);
@@ -587,7 +587,7 @@ describe("Controller", () => {
     })
 
     it("calls editor.insertText", () => {
-      controller.insertIntoEditor("a", 0);
+      controller.insertIntoEditor([{value: "a"}], {line: 0, ch: 0}, {line: 0, ch: 0}, '4');
       expect(controller.editor.insertText).toHaveBeenCalled();
     });
   });
@@ -603,7 +603,7 @@ describe("Controller", () => {
     })
 
     it("calls editor.deleteText", () => {
-      controller.deleteFromEditor("a", 0);
+      controller.deleteFromEditor([{value: "a"}], {line: 0, ch: 0}, {line: 0, ch: 1}, '4');
       expect(controller.editor.deleteText).toHaveBeenCalled();
     });
   });
