@@ -342,7 +342,7 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'hasReachedMax',
     value: function hasReachedMax() {
-      return this.outConns.length > this.MAX_CONNECTIONS;
+      return this.outConns.length >= this.MAX_CONNECTIONS;
     }
   }, {
     key: 'forwardRequest',
