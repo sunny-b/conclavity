@@ -53,34 +53,79 @@ var CRDT = function (_EventEmitter) {
     value: function retrieveStruct() {
       return this.struct;
     }
+
+    // localInsert(values, startPos) {
+    //   let value, char;
+    //
+    //   for (let i = 0; i < values.length; i++) {
+    //     value = values[i];
+    //
+    //     if (values[i - 1] === '\n') {
+    //       startPos.line++;
+    //       startPos.ch = 0;
+    //     }
+    //
+    //     this.vector.increment();
+    //     char = this.generateChar(value, startPos);
+    //     this.insertChar(char, startPos);
+    //
+    //     this.emit('localInsert', char, this.vector.getLocalVersion());
+    //     startPos.ch++;
+    //   }
+    // }
+
   }, {
     key: 'localInsert',
-    value: function localInsert(values, startPos) {
-      var value = void 0,
-          char = void 0;
-
+    value: function localInsert(values, pos) {
+      var chars = [];
+      var counter = 0;
       for (var i = 0; i < values.length; i++) {
-        value = values[i];
+        if (counter % 100 === 0) this.vector.increment();
+        counter = (counter + 1) % 101;
 
         if (values[i - 1] === '\n') {
-          startPos.line++;
-          startPos.ch = 0;
+          pos.line++;
+          pos.ch = 0;
         }
 
-        this.vector.increment();
-        char = this.generateChar(value, startPos);
-        this.insertChar(char, startPos);
+        var char = this.generateChar(values[i], pos);
+        this.insertChar(char, pos);
+        chars.push(char);
 
-        this.emit('localInsert', char, this.vector.getLocalVersion());
-        startPos.ch++;
+        pos.ch++;
       }
+
+      this.emit('localInsert', chars);
     }
+
+    // remoteInsert(char) {
+    //   const pos = this.findPosition(char);
+    //   this.insertChar(char, pos);
+    //   this.emit('remoteInsert', char.value, pos, char.siteId)
+    // }
+
   }, {
     key: 'remoteInsert',
-    value: function remoteInsert(char) {
-      var pos = this.findPosition(char);
+    value: function remoteInsert(chars) {
+      var char = chars[0];
+      var posStatic = this.findInsertPosition(char);
+      var pos = Object.assign({}, posStatic);
       this.insertChar(char, pos);
-      this.emit('remoteInsert', char.value, pos, char.siteId);
+
+      for (var i = 1; i < chars.length; i++) {
+        char = chars[i];
+
+        if (chars[i - 1].value === '\n') {
+          pos.line++;
+          pos.ch = 0;
+        } else {
+          pos.ch++;
+        }
+
+        this.insertChar(char, pos);
+      }
+
+      this.emit('remoteInsert', chars, posStatic, pos, char.siteId);
     }
   }, {
     key: 'insertChar',
@@ -106,8 +151,6 @@ var CRDT = function (_EventEmitter) {
   }, {
     key: 'localDelete',
     value: function localDelete(startPos, endPos) {
-      var _this2 = this;
-
       var chars = void 0,
           line = void 0,
           ch = void 0,
@@ -121,11 +164,12 @@ var CRDT = function (_EventEmitter) {
         newlineRemoved = true;
         chars = this.struct[startPos.line].splice(startPos.ch);
 
+        // delete all chars for the middle lines
         for (line = startPos.line + 1; line < endPos.line; line++) {
           chars = chars.concat(this.struct[line].splice(0));
         }
 
-        // splice chars off of the last line, only if last line exists in CRDt
+        // delete chars on the last line up to the ch index
         if (this.struct[endPos.line]) {
           chars = chars.concat(this.struct[endPos.line].splice(0, endPos.ch));
         }
@@ -140,16 +184,13 @@ var CRDT = function (_EventEmitter) {
         })) newlineRemoved = true;
       }
 
-      chars.forEach(function (char) {
-        _this2.vector.increment();
-        _this2.emit('localDelete', char, _this2.vector.getLocalVersion());
-      });
-
       this.removeEmptyLines();
 
       if (newlineRemoved && this.struct[startPos.line + 1]) {
         this.mergeLines(startPos.line);
       }
+
+      this.emit('localDelete', chars);
     }
 
     // when deleting newline, concat line with next line
@@ -176,28 +217,186 @@ var CRDT = function (_EventEmitter) {
     }
   }, {
     key: 'remoteDelete',
-    value: function remoteDelete(char, siteId) {
-      var pos = this.findPosition(char);
-      this.struct[pos.line].splice(pos.ch, 1);
+    value: function remoteDelete(chars, siteId) {
+      var startPos = this.findPosition(chars[0]);
+      var endPos = this.findPosition(chars[chars.length - 1]);
+      var text = this.generateTextFromPos(startPos, endPos);
+      var charsText = chars.map(function (char) {
+        return char.value;
+      }).join('');
 
-      if (char.value === "\n" && this.struct[pos.line + 1]) {
-        this.mergeLines(pos.line);
+      if (text !== '' && charsText === text) {
+        this.fastDelete(chars, startPos, endPos, siteId);
+      } else {
+        this.slowDelete(chars, siteId);
+      }
+    }
+  }, {
+    key: 'slowDelete',
+    value: function slowDelete(chars, siteId) {
+      var _this2 = this;
+
+      chars.forEach(function (char) {
+        var pos = _this2.findPosition(char);
+        var posClone = Object.assign({}, pos);
+
+        if (!pos) return;
+
+        _this2.struct[pos.line].splice(pos.ch, 1);
+
+        if (char.value === "\n" && _this2.struct[pos.line + 1]) {
+          _this2.mergeLines(pos.line);
+        }
+
+        _this2.removeEmptyLines();
+        _this2.emit('remoteDelete', chars, pos, posClone, siteId);
+      });
+    }
+  }, {
+    key: 'fastDelete',
+    value: function fastDelete(chars, startPos, endPos, siteId) {
+      var newlineRemoved = false;
+      var line = void 0,
+          ch = void 0,
+          i = void 0,
+          charNum = void 0;
+
+      // for multi-line deletes
+      if (startPos.line !== endPos.line) {
+        // delete chars on first line from startPos.ch to end of line
+        newlineRemoved = true;
+        this.struct[startPos.line].splice(startPos.ch);
+
+        for (line = startPos.line + 1; line < endPos.line; line++) {
+          this.struct[line].splice(0);
+        }
+
+        // todo for loop inside crdt
+        if (this.struct[endPos.line]) {
+          this.struct[endPos.line].splice(0, endPos.ch + 1);
+        }
+
+        // single-line deletes
+      } else {
+        charNum = endPos.ch - startPos.ch + 1;
+        this.struct[startPos.line].splice(startPos.ch, charNum);
+
+        if (chars.find(function (char) {
+          return char.value === '\n';
+        })) newlineRemoved = true;
       }
 
       this.removeEmptyLines();
-      this.emit('remoteDelete', char.value, pos, siteId);
+
+      if (newlineRemoved && this.struct[startPos.line + 1]) {
+        this.mergeLines(startPos.line);
+      }
+
+      this.emit('remoteDelete', chars, startPos, endPos, siteId);
     }
   }, {
     key: 'isEmpty',
     value: function isEmpty() {
       return this.struct.length === 1 && this.struct[0].length === 0;
     }
+  }, {
+    key: 'findPosition',
+    value: function findPosition(char) {
+      var minLine = 0;
+      var totalLines = this.struct.length;
+      var maxLine = totalLines - 1;
+      var lastLine = this.struct[maxLine];
+      var currentLine = void 0,
+          midLine = void 0,
+          charIdx = void 0,
+          minCurrentLine = void 0,
+          lastChar = void 0,
+          maxCurrentLine = void 0,
+          minLastChar = void 0,
+          maxLastChar = void 0;
+
+      // check if struct is empty or char is less than first char
+      if (this.isEmpty() || char.compareTo(this.struct[0][0]) < 0) {
+        return false;
+      }
+
+      lastChar = lastLine[lastLine.length - 1];
+
+      // char is greater than all existing chars (insert at end)
+      if (char.compareTo(lastChar) > 0) {
+        return false;
+      }
+
+      // binary search
+      while (minLine + 1 < maxLine) {
+        midLine = Math.floor(minLine + (maxLine - minLine) / 2);
+        currentLine = this.struct[midLine];
+        lastChar = currentLine[currentLine.length - 1];
+
+        if (char.compareTo(lastChar) === 0) {
+          return { line: midLine, ch: currentLine.length - 1 };
+        } else if (char.compareTo(lastChar) < 0) {
+          maxLine = midLine;
+        } else {
+          minLine = midLine;
+        }
+      }
+
+      // Check between min and max line.
+      minCurrentLine = this.struct[minLine];
+      minLastChar = minCurrentLine[minCurrentLine.length - 1];
+      maxCurrentLine = this.struct[maxLine];
+      maxLastChar = maxCurrentLine[maxCurrentLine.length - 1];
+
+      if (char.compareTo(minLastChar) <= 0) {
+        charIdx = this.findIndexInLine(char, minCurrentLine);
+        return { line: minLine, ch: charIdx };
+      } else {
+        charIdx = this.findIndexInLine(char, maxCurrentLine);
+        return { line: maxLine, ch: charIdx };
+      }
+    }
+  }, {
+    key: 'findIndexInLine',
+    value: function findIndexInLine(char, line) {
+      var left = 0;
+      var right = line.length - 1;
+      var mid = void 0,
+          compareNum = void 0;
+
+      if (line.length === 0 || char.compareTo(line[left]) < 0) {
+        return left;
+      } else if (char.compareTo(line[right]) > 0) {
+        return this.struct.length;
+      }
+
+      while (left + 1 < right) {
+        mid = Math.floor(left + (right - left) / 2);
+        compareNum = char.compareTo(line[mid]);
+
+        if (compareNum === 0) {
+          return mid;
+        } else if (compareNum > 0) {
+          left = mid;
+        } else {
+          right = mid;
+        }
+      }
+
+      if (char.compareTo(line[left]) === 0) {
+        return left;
+      } else if (char.compareTo(line[right]) === 0) {
+        return right;
+      } else {
+        return false;
+      }
+    }
 
     // could be refactored to look prettier
 
   }, {
-    key: 'findPosition',
-    value: function findPosition(char) {
+    key: 'findInsertPosition',
+    value: function findInsertPosition(char) {
       var minLine = 0;
       var totalLines = this.struct.length;
       var maxLine = totalLines - 1;
@@ -265,8 +464,8 @@ var CRDT = function (_EventEmitter) {
     // binary search to find char in a line
 
   }, {
-    key: 'findIndexInLine',
-    value: function findIndexInLine(char, line) {
+    key: 'findInsertIndexInLine',
+    value: function findInsertIndexInLine(char, line) {
       var left = 0;
       var right = line.length - 1;
       var mid = void 0,
@@ -398,6 +597,7 @@ var CRDT = function (_EventEmitter) {
         }
       }
     }
+
     /*
     Math.random gives you a range that is inclusive of the min and exclusive of the max
     so have to add and subtract ones to get them all into that format
@@ -450,6 +650,29 @@ var CRDT = function (_EventEmitter) {
         return line.map(function (char) {
           return char.value;
         }).join('');
+      }).join('');
+    }
+  }, {
+    key: 'generateTextFromPos',
+    value: function generateTextFromPos(startPos, endPos) {
+      if (!startPos || !endPos) {
+        return '';
+      } else if (startPos.line === endPos.line && startPos.ch === endPos.ch) {
+        return this.struct[startPos.line][startPos.ch].value;
+      }
+
+      var chars = this.struct[startPos.line].slice(startPos.ch);
+
+      for (var line = startPos.line + 1; line < endPos.line; line++) {
+        chars = chars.concat(this.struct[line].slice(0));
+      }
+
+      if (startPos.line !== endPos.line && this.struct[endPos.line]) {
+        chars = chars.concat(this.struct[endPos.line].slice(0, endPos.ch + 1));
+      }
+
+      return chars.map(function (char) {
+        return char.value;
       }).join('');
     }
   }]);

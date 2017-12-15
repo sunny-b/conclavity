@@ -13,6 +13,7 @@ class Conclave {
       video: true,
       changeUrl: true,
       errorMessage:true,
+      peersLeft: true,
       placeholder: 'Share the link to invite collaborators to your room'
     };
     options = Object.assign(defaults, options);
@@ -56,6 +57,7 @@ class Conclave {
     const $editor = $(editorHTMLStr);
     $('#conclave').append($editor).addClass('hide');
     if (options.shareLink) $('.share-link').removeClass('hide');
+    if (!options.peersLeft) $('.text-wrapper').addClass('reverse');
   }
 
   initializeController(options) {

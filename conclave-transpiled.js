@@ -36,6 +36,7 @@ var Conclave = function () {
       video: true,
       changeUrl: true,
       errorMessage: true,
+      peersLeft: true,
       placeholder: 'Share the link to invite collaborators to your room'
     };
     options = Object.assign(defaults, options);
@@ -52,6 +53,7 @@ var Conclave = function () {
       var $editor = (0, _jquery2.default)(editorHTMLStr);
       (0, _jquery2.default)('#conclave').append($editor).addClass('hide');
       if (options.shareLink) (0, _jquery2.default)('.share-link').removeClass('hide');
+      if (!options.peersLeft) (0, _jquery2.default)('.text-wrapper').addClass('reverse');
     }
   }, {
     key: 'initializeController',

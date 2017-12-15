@@ -27,10 +27,12 @@ var Broadcast = function (_EventEmitter) {
     var _this = _possibleConstructorReturn(this, (Broadcast.__proto__ || Object.getPrototypeOf(Broadcast)).call(this));
 
     _this.peer = peer;
+    _this.siteId = siteId;
     _this.outConns = [];
     _this.inConns = [];
     _this.outgoingBuffer = [];
     _this.MAX_BUFFER_SIZE = 40;
+    _this.MAX_CONNECTIONS = 5;
     _this.currentStream = null;
 
     _this.init(targetPeerId, siteId);
@@ -221,7 +223,7 @@ var Broadcast = function (_EventEmitter) {
     key: 'addToNetwork',
     value: function addToNetwork(peerId, siteId) {
       this.send({
-        type: "add to network",
+        type: "addToNetwork",
         newPeer: peerId,
         newSite: siteId
       });
@@ -230,7 +232,7 @@ var Broadcast = function (_EventEmitter) {
     key: 'removeFromNetwork',
     value: function removeFromNetwork(peerId) {
       this.send({
-        type: "remove from network",
+        type: "removeFromNetwork",
         oldPeer: peerId
       });
 
@@ -274,12 +276,73 @@ var Broadcast = function (_EventEmitter) {
       }
     }
   }, {
-    key: 'hasReachedMax',
-    value: function hasReachedMax(halfTheNetwork) {
-      var tooManyInConns = this.inConns.length > Math.max(halfTheNetwork, 5);
-      var tooManyOutConns = this.outConns.length > Math.max(halfTheNetwork, 5);
+    key: 'evaluateRequest',
+    value: function evaluateRequest(peerId, siteId) {
+      if (this.hasReachedMax()) {
+        this.forwardRequest(peerId, siteId);
+      } else {
+        this.emit('acceptConn', peerId, siteId);
+      }
+    }
+  }, {
+    key: 'evaluateSecondary',
+    value: function evaluateSecondary(peerId, siteId) {
+      if (this.hasReachedMax()) {
+        this.forwardSecondary(peerId, siteId);
+      } else {
+        this.acceptSecondary(peerId, siteId);
+      }
+    }
+  }, {
+    key: 'acceptSecondary',
+    value: function acceptSecondary(peerId, siteId) {
+      var connBack = this.peer.connect(peerId);
+      this.addToOutConns(connBack);
+      this.emit('addToNetwork', peerId, siteId);
+    }
+  }, {
+    key: 'forwardSecondaryRequest',
+    value: function forwardSecondaryRequest(peerId, siteId) {
+      var connected = this.outConns.filter(function (conn) {
+        return conn.peer !== peerId;
+      });
+      var randomIdx = Math.floor(Math.random() * connected.length);
+      connected[randomIdx].send(JSON.stringify({
+        type: 'secondaryRequest',
+        peerId: peerId,
+        siteId: siteId
+      }));
+    }
+  }, {
+    key: 'findSecondary',
+    value: function findSecondary(network) {
+      var _this5 = this;
 
-      return tooManyInConns || tooManyOutConns;
+      if (network.length === 2) return;
+
+      var filteredNetwork = network.filter(function (conn) {
+        return conn.peerId !== _this5.peer.id;
+      });
+      var secondaryConn = filteredNetwork[filteredNetwork.length - 1];
+      this.requestSecondaryConnection(secondaryConn.peerId, this.peer.id, this.siteId);
+    }
+  }, {
+    key: 'requestSecondaryConnection',
+    value: function requestSecondaryConnection(target, peerId, siteId) {
+      var conn = this.peer.connect(target);
+      this.addToOutConns(conn);
+      conn.on('open', function () {
+        conn.send(JSON.stringify({
+          type: 'secondaryRequest',
+          peerId: peerId,
+          siteId: siteId
+        }));
+      });
+    }
+  }, {
+    key: 'hasReachedMax',
+    value: function hasReachedMax() {
+      return this.outConns.length > this.MAX_CONNECTIONS;
     }
   }, {
     key: 'forwardRequest',
@@ -297,13 +360,13 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onPeerConnection',
     value: function onPeerConnection() {
-      var _this5 = this;
+      var _this6 = this;
 
       this.peer.on('connection', function (connection) {
-        _this5.onConnection(connection);
-        _this5.onVideoCall(connection);
-        _this5.onData(connection);
-        _this5.onConnClose(connection);
+        _this6.onConnection(connection);
+        _this6.onVideoCall(connection);
+        _this6.onData(connection);
+        _this6.onConnClose(connection);
       });
     }
   }, {
@@ -341,10 +404,10 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onVideoCall',
     value: function onVideoCall() {
-      var _this6 = this;
+      var _this7 = this;
 
       this.peer.on('call', function (callObj) {
-        _this6.emit('videoCall', callObj);
+        _this7.emit('videoCall', callObj);
       });
     }
   }, {
@@ -358,18 +421,18 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onStream',
     value: function onStream(callObj) {
-      var _this7 = this;
+      var _this8 = this;
 
       callObj.on('stream', function (stream) {
-        if (_this7.currentStream) {
-          _this7.currentStream.close();
+        if (_this8.currentStream) {
+          _this8.currentStream.close();
         }
-        _this7.currentStream = callObj;
+        _this8.currentStream = callObj;
 
-        _this7.emit('videoStream', stream, callObj);
+        _this8.emit('videoStream', stream, callObj);
 
         callObj.on('close', function () {
-          return _this7.onStreamClose(callObj.peer);
+          return _this8.onStreamClose(callObj.peer);
         });
       });
     }
@@ -386,40 +449,44 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onData',
     value: function onData(connection) {
-      var _this8 = this;
+      var _this9 = this;
 
       connection.on('data', function (data) {
         var dataObj = JSON.parse(data);
 
         switch (dataObj.type) {
           case 'connRequest':
-            _this8.emit('connRequest', dataObj.peerId, dataObj.siteId);
+            _this9.evaluateRequest(dataObj.peerId, dataObj.siteId);
+            break;
+          case 'secondaryRequest':
+            _this9.evaluateSecondary(dataObj.peerId, dataObj.siteId);
             break;
           case 'sync':
-            _this8.processOutgoingBuffer(dataObj.peerId);
-            _this8.emit('sync', dataObj);
+            _this9.processOutgoingBuffer(dataObj.peerId);
+            _this9.findSecondary(dataObj.network);
+            _this9.emit('sync', dataObj);
             break;
           case 'syncEnd':
-            _this8.processOutgoingBuffer(dataObj.peerId);
+            _this9.processOutgoingBuffer(dataObj.peerId);
             break;
-          case 'add to network':
-            _this8.emit('addToNetwork', dataObj.newPeer, dataObj.newSite);
+          case 'addToNetwork':
+            _this9.emit('addToNetwork', dataObj.newPeer, dataObj.newSite);
             break;
-          case 'remove from network':
-            _this8.emit('removeFromNetwork', dataObj.oldPeer);
+          case 'removeFromNetwork':
+            _this9.emit('removeFromNetwork', dataObj.oldPeer);
             break;
           default:
-            _this8.emit('remoteOperation', dataObj);
+            _this9.emit('remoteOperation', dataObj);
         }
       });
     }
   }, {
     key: 'randomId',
     value: function randomId() {
-      var _this9 = this;
+      var _this10 = this;
 
       var possConns = this.inConns.filter(function (conn) {
-        return _this9.peer.id !== conn.peer;
+        return _this10.peer.id !== conn.peer;
       });
       var randomIdx = Math.floor(Math.random() * possConns.length);
       if (possConns[randomIdx]) {
@@ -438,14 +505,14 @@ var Broadcast = function (_EventEmitter) {
   }, {
     key: 'onConnClose',
     value: function onConnClose(connection) {
-      var _this10 = this;
+      var _this11 = this;
 
       connection.on('close', function () {
-        _this10.removeFromConnections(connection.peer);
-        _this10.emit('peerClose', connection.peer, _this10.randomId());
+        _this11.removeFromConnections(connection.peer);
+        _this11.emit('peerClose', connection.peer, _this11.randomId());
 
-        if (_this10.inConns.length < 5 || _this10.outConns.length < 5) {
-          _this10.emit('findNewTarget');
+        if (_this11.inConns.length < 5 || _this11.outConns.length < 5) {
+          _this11.emit('findNewTarget');
         }
       });
     }

@@ -99,17 +99,17 @@ var Controller = function () {
         return _this.handleUpload(text, startPos);
       });
 
-      this.crdt.on('localInsert', function (char, version) {
-        return _this.broadcastInsertion(char, version);
+      this.crdt.on('localInsert', function (chars) {
+        return _this.broadcastInsertion(chars);
       });
-      this.crdt.on('localDelete', function (char, version) {
-        return _this.broadcastDeletion(char, version);
+      this.crdt.on('localDelete', function (chars) {
+        return _this.broadcastDeletion(chars);
       });
-      this.crdt.on('remoteInsert', function (val, pos, siteId) {
-        return _this.insertIntoEditor(val, pos, siteId);
+      this.crdt.on('remoteInsert', function (chars, startPos, endPos, siteId) {
+        return _this.insertIntoEditor(chars, startPos, endPos, siteId);
       });
-      this.crdt.on('remoteDelete', function (val, pos, siteId) {
-        return _this.deleteFromEditor(val, pos, siteId);
+      this.crdt.on('remoteDelete', function (chars, startPos, endPos, siteId) {
+        return _this.deleteFromEditor(chars, startPos, endPos, siteId);
       });
 
       this.view.on('answerCall', function (callObj, ms) {
@@ -158,8 +158,8 @@ var Controller = function () {
       this.broadcast.on('findNewTarget', function () {
         return _this.findNewTarget();
       });
-      this.broadcast.on('connRequest', function (peerId, siteId) {
-        return _this.evaluateRequest(peerId, siteId);
+      this.broadcast.on('acceptConn', function (peerId, siteId) {
+        return _this.syncTo(peerId, siteId);
       });
     }
   }, {
@@ -190,17 +190,6 @@ var Controller = function () {
       }
 
       this.view.enableEditor();
-    }
-  }, {
-    key: 'evaluateRequest',
-    value: function evaluateRequest(peerId, siteId) {
-      var halfTheNetwork = Math.ceil(this.network.length / 2);
-
-      if (this.broadcast.hasReachedMax(halfTheNetwork)) {
-        this.broadcast.forwardRequest(peerId, siteId);
-      } else {
-        this.syncTo(peerId, siteId);
-      }
     }
   }, {
     key: 'handlePeerClose',
@@ -280,7 +269,13 @@ var Controller = function () {
       if (!this.network.find(function (obj) {
         return obj.siteId === siteId;
       })) {
-        this.network.push({ peerId: peerId, siteId: siteId });
+        var peer = {
+          peerId: peerId,
+          siteId: siteId,
+          active: true
+        };
+
+        this.network.push(peer);
         if (siteId !== this.siteId) {
           this.addToListOfPeers(peerId, siteId);
         }
@@ -300,11 +295,13 @@ var Controller = function () {
         return obj.peerId === peerId;
       });
       var idx = this.network.indexOf(peerObj);
+      var peer = this.network[idx];
 
-      if (idx >= 0) {
-        var deletedObj = this.network.splice(idx, 1)[0];
+      if (idx >= 0 && peer.active) {
+        peer.active = false;
+
         this.view.removeFromListOfPeers(peerId);
-        this.editor.removeCursor(deletedObj.siteId);
+        this.editor.removeCursor(peer.siteId);
         this.broadcast.removeFromNetwork(peerId);
       }
     }
@@ -387,52 +384,101 @@ var Controller = function () {
     value: function handleRemoteOperation(operation) {
       if (this.vector.hasBeenApplied(operation.version)) return;
 
-      if (operation.type === 'insert') {
-        this.applyOperation(operation);
-      } else if (operation.type === 'delete') {
-        this.buffer.push(operation);
-      }
-
-      this.processDeletionBuffer();
+      this.buffer.push(operation);
+      this.processBuffer();
       this.addToNetwork(operation.peerId, operation.version.siteId);
       this.broadcast.send(operation);
     }
+
+    // processDeletionBuffer() {
+    //   let i = 0;
+    //   let deleteOperation;
+    //
+    //   while (i < this.buffer.length) {
+    //     deleteOperation = this.buffer[i];
+    //
+    //     if (this.hasInsertionBeenApplied(deleteOperation)) {
+    //       this.applyOperation(deleteOperation);
+    //       this.buffer.splice(i, 1);
+    //     } else {
+    //       i++;
+    //     }
+    //   }
+    // }
+
   }, {
-    key: 'processDeletionBuffer',
-    value: function processDeletionBuffer() {
+    key: 'processBuffer',
+    value: function processBuffer() {
       var i = 0;
-      var deleteOperation = void 0;
+      var operation = void 0,
+          found = void 0;
 
       while (i < this.buffer.length) {
-        deleteOperation = this.buffer[i];
+        operation = this.buffer[i];
 
-        if (this.hasInsertionBeenApplied(deleteOperation)) {
-          this.applyOperation(deleteOperation);
+        if (operation.type === 'insert' || this.hasInsertionBeenApplied(operation)) {
+          this.applyOperation(operation);
+          found = true;
           this.buffer.splice(i, 1);
         } else {
           i++;
         }
       }
+
+      if (found) this.processBuffer();
     }
+
+    // hasInsertionBeenApplied(operation) {
+    //   const charVersion = { siteId: operation.char.siteId, counter: operation.char.counter };
+    //   return this.vector.hasBeenApplied(charVersion);
+    // }
+
   }, {
     key: 'hasInsertionBeenApplied',
     value: function hasInsertionBeenApplied(operation) {
-      var charVersion = { siteId: operation.char.siteId, counter: operation.char.counter };
-      return this.vector.hasBeenApplied(charVersion);
+      var isReady = true;
+
+      for (var i = 0; i < operation.chars.length; i++) {
+        var char = operation.chars[i];
+        var charVersion = { siteId: char.siteId, counter: char.counter };
+
+        if (!this.vector.hasBeenApplied(charVersion)) {
+          isReady = false;
+          break;
+        }
+      }
+
+      return isReady;
     }
+
+    // applyOperation(operation) {
+    //   const char = operation.char;
+    //   const identifiers = char.position.map(pos => new Identifier(pos.digit, pos.siteId));
+    //   const newChar = new Char(char.value, char.counter, char.siteId, identifiers);
+    //
+    //   if (operation.type === 'insert') {
+    //     this.crdt.remoteInsert(newChar);
+    //   } else if (operation.type === 'delete') {
+    //     this.crdt.remoteDelete(newChar, operation.version.siteId);
+    //   }
+    //
+    //   this.vector.update(operation.version);
+    // }
+
   }, {
     key: 'applyOperation',
     value: function applyOperation(operation) {
-      var char = operation.char;
-      var identifiers = char.position.map(function (pos) {
-        return new _identifier2.default(pos.digit, pos.siteId);
+      var chars = operation.chars.map(function (char) {
+        var identifiers = char.position.map(function (pos) {
+          return new _identifier2.default(pos.digit, pos.siteId);
+        });
+        return new _char2.default(char.value, char.counter, char.siteId, identifiers);
       });
-      var newChar = new _char2.default(char.value, char.counter, char.siteId, identifiers);
 
       if (operation.type === 'insert') {
-        this.crdt.remoteInsert(newChar);
+        this.crdt.remoteInsert(chars);
       } else if (operation.type === 'delete') {
-        this.crdt.remoteDelete(newChar, operation.version.siteId);
+        this.crdt.remoteDelete(chars, operation.version.siteId);
       }
 
       this.vector.update(operation.version);
@@ -449,74 +495,67 @@ var Controller = function () {
     }
   }, {
     key: 'broadcastInsertion',
-    value: function broadcastInsertion(char, version) {
-      var operation = {
-        type: 'insert',
-        peerId: this.broadcast.peer.id,
-        char: char,
-        version: version
-      };
+    value: function broadcastInsertion(chars) {
+      while (chars.length > 0) {
+        var someChars = chars.splice(0, 100);
 
-      this.broadcast.send(operation);
+        var operation = {
+          type: 'insert',
+          chars: someChars,
+          version: {
+            siteId: someChars[0].siteId,
+            counter: someChars[0].counter
+          }
+        };
+
+        this.broadcast.send(operation);
+      }
     }
   }, {
     key: 'broadcastDeletion',
-    value: function broadcastDeletion(char, version) {
-      var operation = {
-        type: 'delete',
-        peerId: this.broadcast.peer.id,
-        char: char,
-        version: version
-      };
+    value: function broadcastDeletion(chars) {
+      while (chars.length > 0) {
+        var someChars = chars.splice(0, 100);
+        this.vector.increment();
 
-      this.broadcast.send(operation);
+        var operation = {
+          type: 'delete',
+          chars: someChars,
+          version: this.vector.getLocalVersion()
+        };
+
+        this.broadcast.send(operation);
+      }
     }
   }, {
     key: 'insertIntoEditor',
-    value: function insertIntoEditor(value, pos, siteId) {
+    value: function insertIntoEditor(chars, startPos, endPos, siteId) {
       var positions = {
-        from: {
-          line: pos.line,
-          ch: pos.ch
-        },
-        to: {
-          line: pos.line,
-          ch: pos.ch
-        }
+        from: startPos,
+        to: endPos
       };
 
-      this.editor.insertText(value, positions, siteId);
+      this.editor.insertText(chars.map(function (char) {
+        return char.value;
+      }).join(''), positions, siteId);
     }
   }, {
     key: 'deleteFromEditor',
-    value: function deleteFromEditor(value, pos, siteId) {
-      var positions = void 0;
+    value: function deleteFromEditor(chars, startPos, endPos, siteId) {
+      var positions = {
+        from: startPos,
+        to: endPos
+      };
 
-      if (value === "\n") {
-        positions = {
-          from: {
-            line: pos.line,
-            ch: pos.ch
-          },
-          to: {
-            line: pos.line + 1,
-            ch: 0
-          }
-        };
+      if (chars[chars.length - 1].value === "\n") {
+        positions.to.line++;
       } else {
-        positions = {
-          from: {
-            line: pos.line,
-            ch: pos.ch
-          },
-          to: {
-            line: pos.line,
-            ch: pos.ch + 1
-          }
-        };
+        positions.to.ch++;
       }
 
-      this.editor.deleteText(value, positions, siteId);
+      this.editor.deleteText(chars.map(function (char) {
+        return char.value;
+      }).join(''), positions, siteId);
     }
   }]);
 

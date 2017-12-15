@@ -112,6 +112,10 @@ Editor
   justify-content: space-between;
 }
 
+.text-wrapper.reverse {
+  flex-direction: row-reverse;
+}
+
 .textarea {
   position: relative;
 }
