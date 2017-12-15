@@ -8,9 +8,9 @@
 
 ## Summary
 
-Conclavity is a dependency-free, embeddable real-time, collaborative text editor for the browser.
+Conclavity is a dependency-free, embeddable, real-time, collaborative text editor for the browser.
 
-This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by [Conclave-Team](https://github.com/conclave-team).
+This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by the  [Conclave-Team](https://github.com/conclave-team).
 
 ----
 ## Install
@@ -19,7 +19,9 @@ Installing this editor is as easy as:
 
 ### 1. Install the NPM package
 
-  npm install --save conclavity
+```shell
+npm install --save conclavity
+```
 
 ![Conclavity install](/dist/img/conclavity-shell.gif)
 
