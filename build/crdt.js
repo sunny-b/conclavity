@@ -53,27 +53,6 @@ var CRDT = function (_EventEmitter) {
     value: function retrieveStruct() {
       return this.struct;
     }
-
-    // localInsert(values, startPos) {
-    //   let value, char;
-    //
-    //   for (let i = 0; i < values.length; i++) {
-    //     value = values[i];
-    //
-    //     if (values[i - 1] === '\n') {
-    //       startPos.line++;
-    //       startPos.ch = 0;
-    //     }
-    //
-    //     this.vector.increment();
-    //     char = this.generateChar(value, startPos);
-    //     this.insertChar(char, startPos);
-    //
-    //     this.emit('localInsert', char, this.vector.getLocalVersion());
-    //     startPos.ch++;
-    //   }
-    // }
-
   }, {
     key: 'localInsert',
     value: function localInsert(values, pos) {
@@ -97,13 +76,6 @@ var CRDT = function (_EventEmitter) {
 
       this.emit('localInsert', chars);
     }
-
-    // remoteInsert(char) {
-    //   const pos = this.findPosition(char);
-    //   this.insertChar(char, pos);
-    //   this.emit('remoteInsert', char.value, pos, char.siteId)
-    // }
-
   }, {
     key: 'remoteInsert',
     value: function remoteInsert(chars) {
