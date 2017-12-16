@@ -58,16 +58,18 @@ Conclavity provides an API with options for configurability.
 
 ### `Conclave(options)`
 
-Option         | Default  | Description
----------------|----------|---------------------------------------------
-`shareLink`    | `true`   | Provides a link to share with other users to collaborate
-`icons`        | `true`   | If set to `true`, phone icons will appear next to users' name to indicate they can be called
-`video`        | `true`   | Allows the ability for users to do one-on-one video chat
-`changeUrl`    | `true`   | Changes the current URL so if user refreshes page, they will remain in collaboration session with other users
-`errorMessage` | `true`   | Provides an error message when user gets disconnected from signaling server
-`showPeers`    | `true`   | Show the other peers that are user is collaborating with
-`peersLeft`    | `true`   | The peer lists appear to the left of document if `true`, otherwise to the right.
-`placeholder`  | message  | Specify the placeholder message that will appear in the document. Defaults to `Share the link to invite collaborators to your room`
+Option         | Default     | Description
+---------------|-------------|---------------------------------------------
+`peerId`       | `null`      | You can provide your own peerId to the Peer Server
+`peer`         | `null`      | Allows you to create your own instance of Peer Server
+`shareLink`    | `true`      | Provides a link to share with other users to collaborate
+`icons`        | `true`      | If set to `true`, phone icons will appear next to users' name to indicate they can be called
+`video`        | `true`      | Allows the ability for users to do one-on-one video chat
+`changeUrl`    | `true`      | Changes the current URL so if user refreshes page, they will remain in collaboration session with other users
+`errorMessage` | `true`      | Provides an error message when user gets disconnected from signaling server
+`showPeers`    | `true`      | Show the other peers that are user is collaborating with
+`peersLeft`    | `true`      | The peer lists appear to the left of document if `true`, otherwise to the right.
+`placeholder`  | message     | Specify the placeholder message that will appear in the document. Defaults to `Share the link to invite collaborators to your room`
 
 ---
 ## Debug

@@ -6,12 +6,12 @@ Fonts
 
 @font-face {
   font-family: "InputLight";
-  src: url('https://cdn.jsdelivr.net/npm/conclavity@latest/dist/fonts/InputSans-Light.ttf');
+  src: url('https://cdn.jsdelivr.net/npm/conclavity/dist/fonts/InputSans-Light.ttf');
 }
 
 @font-face {
   font-family: "InputMedium";
-  src: url('https://cdn.jsdelivr.net/npm/conclavity@latest/dist/fonts/InputSans-Medium.ttf');
+  src: url('https://cdn.jsdelivr.net/npm/conclavity/dist/fonts/InputSans-Medium.ttf');
 }
 
 /****************
