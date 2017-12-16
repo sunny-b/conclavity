@@ -84,6 +84,7 @@ Editor
 
 .peer-toggle {
   cursor: pointer;
+  align-self: center;
 }
 
 .peer-toggle .toggle-minus {

@@ -1,6 +1,6 @@
 {
   "name": "conclavity",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "embeddable peer-to-peer collaborative text editor",
   "main": "conclave-transpiled.js",
   "scripts": {
