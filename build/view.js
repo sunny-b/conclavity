@@ -203,17 +203,17 @@ var View = function (_EventEmitter) {
   }, {
     key: 'addIcons',
     value: function addIcons() {
-      var whiteMinimize = this.icons.minus.toSvg({ 'stroke-width': 2, color: 'white', class: 'minimize' });
+      var minimize = this.icons.minus.toSvg({ 'stroke-width': 2, color: 'white', class: 'minimize' });
       var exit = this.icons.x.toSvg({ 'stroke-width': 2, color: 'white', class: 'exit' });
       var copy = this.icons.copy.toSvg({ color: 'rgb(17, 117, 232)', class: 'copy-link' });
 
-      (0, _jquery2.default)('.video-bar').append(whiteMinimize, exit);
+      (0, _jquery2.default)('.video-bar').append(minimize, exit);
       (0, _jquery2.default)('.copy-container').append(copy);
 
       if (this.options.showPeers) {
-        var blueMinimize = this.icons['minus-circle'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-minus' });
-        var bluePlus = this.icons['plus-circle'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-plus' });
-        (0, _jquery2.default)('.peer-toggle').append(blueMinimize, bluePlus);
+        var collapse = this.icons['chevrons-left'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-minus' });
+        var expand = this.icons['chevrons-right'].toSvg({ 'stroke-width': 2, color: 'rgb(17, 117, 232)', class: 'toggle-plus' });
+        (0, _jquery2.default)('.peer-toggle').append(collapse, expand);
         this.attachPeerListEvents();
       }
     }

@@ -32,6 +32,7 @@ var Conclave = function () {
 
     var defaults = {
       peerId: null,
+      peer: null,
       shareLink: true,
       icons: true,
       video: true,
