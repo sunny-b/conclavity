@@ -2,7 +2,7 @@
 
 ## Demo
 
-![Conclavity demo](/dist/img/conclavity-demo.gif)
+![Conclavity demo](/dist/img/conclavity.gif)
 
 ## Summary
 
