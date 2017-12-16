@@ -1,5 +1,3 @@
-![Conclave Logo](/dist/img/conclave-mask-small.ico)
-
 # Conclavity
 
 ## Demo
