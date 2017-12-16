@@ -12,7 +12,7 @@ Conclavity is a dependency-free, embeddable, real-time, collaborative text edito
 
 This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by the  [Conclave-Team](https://github.com/conclave-team).
 
-----
+---
 ## Install
 
 Installing this editor is as easy as:
@@ -51,7 +51,7 @@ import Conclavity from 'conclavity';
 
 new Conclavity();
 ```
-----
+---
 ## Usage
 
 Conclavity provides an API with options for configurability.
@@ -69,7 +69,18 @@ Option         | Default  | Description
 `peersLeft`    | `true`   | The peer lists appear to the left of document if `true`, otherwise to the right.
 `placeholder`  | message  | Specify the placeholder message that will appear in the document. Defaults to `Share the link to invite collaborators to your room`
 
-----
+---
+## Debug
+
+If you have cloned the repository, made changes and want to see how those changes look. You can run
+
+```shell
+npm run debug
+```
+
+and open up the `debug.html` file listed under the `example` folder. You should be able to see any changes you've made.
+
+---
 ## License
 
 MIT

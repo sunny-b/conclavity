@@ -31,6 +31,7 @@ var Conclave = function () {
     _classCallCheck(this, Conclave);
 
     var defaults = {
+      peerId: null,
       shareLink: true,
       icons: true,
       video: true,
@@ -49,7 +50,7 @@ var Conclave = function () {
   _createClass(Conclave, [{
     key: 'generateConclaveEditor',
     value: function generateConclaveEditor(options) {
-      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <div class="peer-toggle show"></div>  \n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span id="myLinkInput" class="disappear aside"></span>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
+      var editorHTMLStr = '<div class="text-wrapper">\n                          <div id="peerId">\n                            <p class=\'no-margin-bottom\'>Peers:</p>\n                          </div>\n                          <div class="editor">\n                            <div class="header">\n                              <div class="peer-toggle show"></div>\n                              <p class=\'share-link hide\'>\n                                <a id=\'myLink\' target="_blank">Public Share Link</a>\n                                <span id="myLinkInput" class="disappear aside"></span>\n                                <span class="copy-container" data-tooltip="Copy to Clipboard"></span>\n                                <span class="copy-status">Copied!</span>\n                              </p>\n                              <div class="buttons">\n                                <button id="download" type="button">Save</button>\n                                <label id="upload" for="file">Upload</label>\n                                <input id="file" type="file" accept=".txt, .js, .rb, .md, .pug, .py"/>\n                              </div>\n                            </div>\n                            <div class="textarea">\n                              <textarea row="10" col="20"></textarea>\n                            </div>\n                          </div>\n                        </div>\n                        <div class="video-modal hide">\n                          <div class="video-bar"></div>\n                          <div class="video-container">\n                            <video></video>\n                          </div>\n                        </div>';
 
       var $editor = (0, _jquery2.default)(editorHTMLStr);
       (0, _jquery2.default)('#conclave').append($editor).addClass('hide');
@@ -60,7 +61,7 @@ var Conclave = function () {
   }, {
     key: 'initializeController',
     value: function initializeController(options) {
-      var peer = options.peer || new _peerjs_fork_firefox2.default({
+      var peerOptions = [{
         host: 'conclavepeerjs.herokuapp.com',
         port: 443,
         secure: true,
@@ -70,7 +71,11 @@ var Conclave = function () {
           }]
         },
         debug: 1
-      });
+      }];
+
+      if (options.peerId) peerOptions.unshift(options.peerId);
+
+      var peer = options.peer || new (Function.prototype.bind.apply(_peerjs_fork_firefox2.default, [null].concat(peerOptions)))();
 
       var locale = !!location.origin.match(/file:\/\//) ? location.href.split('?')[0] : location.origin;
 

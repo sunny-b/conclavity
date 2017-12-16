@@ -8,6 +8,7 @@ import Controller from './build/controller';
 class Conclave {
   constructor(options) {
     const defaults = {
+      peerId: null,
       shareLink: true,
       icons: true,
       video: true,
@@ -31,7 +32,7 @@ class Conclave {
                           </div>
                           <div class="editor">
                             <div class="header">
-                              <div class="peer-toggle show"></div>  
+                              <div class="peer-toggle show"></div>
                               <p class='share-link hide'>
                                 <a id='myLink' target="_blank">Public Share Link</a>
                                 <span id="myLinkInput" class="disappear aside"></span>
@@ -64,23 +65,25 @@ class Conclave {
   }
 
   initializeController(options) {
-    const peer = options.peer || new Peer(
-      {
-        host: 'conclavepeerjs.herokuapp.com',
-        port: 443,
-        secure: true,
-        config: {'iceServers':
-          [
-            { url: 'stun:stun1.l.google.com:19302' },
-            { url: 'turn:numb.viagenie.ca',
-              credential: 'conclave-rulez',
-              username: 'sunnysurvies@gmail.com'
-            }
-          ]
-        },
-        debug: 1
-      }
-    );
+    const peerOptions = [{
+      host: 'conclavepeerjs.herokuapp.com',
+      port: 443,
+      secure: true,
+      config: {'iceServers':
+        [
+          { url: 'stun:stun1.l.google.com:19302' },
+          { url: 'turn:numb.viagenie.ca',
+            credential: 'conclave-rulez',
+            username: 'sunnysurvies@gmail.com'
+          }
+        ]
+      },
+      debug: 1
+    }];
+
+    if (options.peerId) peerOptions.unshift(options.peerId);
+
+    const peer = options.peer || new Peer(...peerOptions);
 
     const locale = !!location.origin.match(/file:\/\//) ? location.href.split('?')[0] : location.origin;
 
