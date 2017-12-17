@@ -8,7 +8,7 @@
 
 Conclavity is a dependency-free, embeddable, real-time, collaborative text editor for the browser.
 
-This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by the  [Conclave-Team](https://github.com/conclave-team).
+This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by the  [Conclave-Team](https://github.com/conclave-team). If you enjoy using the [Conclave Editor](https://conclave-app.herokuapp.com) and want to embed it into your own project, this is the library for you.
 
 ---
 ## Install
