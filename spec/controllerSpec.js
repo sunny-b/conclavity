@@ -228,8 +228,8 @@ describe("Controller", () => {
     });
 
     it("calls broadcast.connectToNewTarget with a random peer on the list", () => {
-      controller.network.push({peerId: 'a', siteId: '10'});
-      controller.network.push({peerId: 'b', siteId: '11'});
+      controller.network.push({peerId: 'a', siteId: '10', active: true});
+      controller.network.push({peerId: 'b', siteId: '11', active: true});
       controller.broadcast.connections = ['a', 'b'];
       spyOn(controller.broadcast, "requestConnection");
       controller.findNewTarget();
