@@ -171,14 +171,16 @@ var Broadcast = function (_EventEmitter) {
     key: 'requestConnection',
     value: function requestConnection(target, peerId, siteId) {
       var conn = this.peer.connect(target);
-      this.addToOutConns(conn);
-      conn.on('open', function () {
-        conn.send(JSON.stringify({
-          type: 'connRequest',
-          peerId: peerId,
-          siteId: siteId
-        }));
-      });
+      if (conn) {
+        this.addToOutConns(conn);
+        conn.on('open', function () {
+          conn.send(JSON.stringify({
+            type: 'connRequest',
+            peerId: peerId,
+            siteId: siteId
+          }));
+        });
+      }
     }
   }, {
     key: 'redistribute',

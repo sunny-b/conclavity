@@ -267,21 +267,25 @@ var Controller = function () {
   }, {
     key: 'addToNetwork',
     value: function addToNetwork(peerId, siteId) {
+      var status = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      var broadcast = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
       if (!this.network.find(function (obj) {
         return obj.siteId === siteId;
       })) {
         var peer = {
           peerId: peerId,
           siteId: siteId,
-          active: true
+          active: status
         };
 
         this.network.push(peer);
-        if (siteId !== this.siteId) {
+
+        if (status && siteId !== this.siteId) {
           this.addToListOfPeers(peerId, siteId);
         }
 
-        this.broadcast.addToNetwork(peerId, siteId);
+        if (broadcast) this.broadcast.addToNetwork(peerId, siteId);
       }
     }
   }, {
@@ -336,7 +340,7 @@ var Controller = function () {
       });
 
       var possibleTargets = unconnected.filter(function (obj) {
-        return obj.peerId !== _this3.peerId;
+        return obj.peerId !== _this3.peerId && obj.active === true;
       });
 
       if (possibleTargets.length === 0 && this.options.changeUrl) {
@@ -359,7 +363,7 @@ var Controller = function () {
       }
 
       syncObj.network.forEach(function (obj) {
-        return _this4.addToNetwork(obj.peerId, obj.siteId);
+        _this4.addToNetwork(obj.peerId, obj.siteId, obj.active, false);
       });
 
       if (this.crdt.totalChars() === 0) {
@@ -390,23 +394,6 @@ var Controller = function () {
       this.addToNetwork(operation.peerId, operation.version.siteId);
       this.broadcast.send(operation);
     }
-
-    // processDeletionBuffer() {
-    //   let i = 0;
-    //   let deleteOperation;
-    //
-    //   while (i < this.buffer.length) {
-    //     deleteOperation = this.buffer[i];
-    //
-    //     if (this.hasInsertionBeenApplied(deleteOperation)) {
-    //       this.applyOperation(deleteOperation);
-    //       this.buffer.splice(i, 1);
-    //     } else {
-    //       i++;
-    //     }
-    //   }
-    // }
-
   }, {
     key: 'processBuffer',
     value: function processBuffer() {
@@ -428,12 +415,6 @@ var Controller = function () {
 
       if (found) this.processBuffer();
     }
-
-    // hasInsertionBeenApplied(operation) {
-    //   const charVersion = { siteId: operation.char.siteId, counter: operation.char.counter };
-    //   return this.vector.hasBeenApplied(charVersion);
-    // }
-
   }, {
     key: 'hasInsertionBeenApplied',
     value: function hasInsertionBeenApplied(operation) {
@@ -451,21 +432,6 @@ var Controller = function () {
 
       return isReady;
     }
-
-    // applyOperation(operation) {
-    //   const char = operation.char;
-    //   const identifiers = char.position.map(pos => new Identifier(pos.digit, pos.siteId));
-    //   const newChar = new Char(char.value, char.counter, char.siteId, identifiers);
-    //
-    //   if (operation.type === 'insert') {
-    //     this.crdt.remoteInsert(newChar);
-    //   } else if (operation.type === 'delete') {
-    //     this.crdt.remoteDelete(newChar, operation.version.siteId);
-    //   }
-    //
-    //   this.vector.update(operation.version);
-    // }
-
   }, {
     key: 'applyOperation',
     value: function applyOperation(operation) {
