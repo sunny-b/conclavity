@@ -262,9 +262,9 @@ describe("Controller", () => {
       peerId: '7',
       siteId: '10',
       network: [
-        {peerId: '1', siteId: '3'},
-        {peerId: '2', siteId: '4'},
-        {peerId: '3', siteId: '5'}
+        {peerId: '1', siteId: '3', active: false},
+        {peerId: '2', siteId: '4', active: true},
+        {peerId: '3', siteId: '5', active: true}
       ]
     };
 
@@ -298,9 +298,9 @@ describe("Controller", () => {
     it("calls addToNetwork for each id in the network property", () => {
       spyOn(controller, "addToNetwork");
       controller.handleSync(syncObj);
-      expect(controller.addToNetwork).toHaveBeenCalledWith('1', '3');
-      expect(controller.addToNetwork).toHaveBeenCalledWith('2', '4');
-      expect(controller.addToNetwork).toHaveBeenCalledWith('3', '5');
+      expect(controller.addToNetwork).toHaveBeenCalledWith('1', '3', false, false);
+      expect(controller.addToNetwork).toHaveBeenCalledWith('2', '4', true, false);
+      expect(controller.addToNetwork).toHaveBeenCalledWith('3', '5', true, false);
     });
   });
 
