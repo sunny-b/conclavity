@@ -50,7 +50,8 @@ import Conclavity from 'conclavity';
 new Conclavity();
 ```
 
-You can then use [Browserify](http://browserify.org/) to modularize the script file.
+You can then use [Browserify](http://browserify.org/) -- or any other bundling library -- to modularize the script file.
+
 ---
 ## Usage
 
