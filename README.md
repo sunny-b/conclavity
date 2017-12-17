@@ -57,7 +57,7 @@ You can then use [Browserify](http://browserify.org/) -- or any other bundling l
 
 Conclavity provides an API with options for configurability.
 
-### `Conclave(options = {})`
+### `Conclavity(options = {})`
 
 Option         | Default     | Description
 ---------------|-------------|---------------------------------------------
