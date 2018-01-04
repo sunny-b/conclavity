@@ -10,7 +10,7 @@ Conclavity is a dependency-free, embeddable, real-time, collaborative text edito
 
 This library is inspired by the [Conclave](https://conclave-team.github.io/conclave-site) editor created by the  [Conclave-Team](https://github.com/conclave-team). If you enjoy using the [Conclave Editor](https://conclave-app.herokuapp.com) and want to embed it into your own project, this is the library for you.
 
-*Note: Chrome 63 introduced a bug that we are currently dealing with. Conclavity still works with older version of Chrome, Chrome Beta and Firefox.*
+*Note: Chrome 63 introduced a bug that we are currently dealing with. Conclavity still works with older versions of Chrome, Chrome Beta and Firefox.*
 
 ---
 ## Install
